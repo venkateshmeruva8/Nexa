@@ -15,7 +15,7 @@ import urllib.request
 import logging
 import shutil
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Tuple, Callable
+from typing import Optional, Dict, Any, List, Tuple, Callable, Set
 
 try:
     from dotenv import load_dotenv
@@ -1818,14 +1818,20 @@ def _launch_application_sync(app_name: str) -> bool:
 
 
 
-async def open_application(text: str) -> str:
+async def open_application(text: str, dry_run: bool = False) -> str:
     """Extracts and launches the specified application."""
     app_name = _extract_app_name(text)
     if not app_name:
         return "Please specify which application you would like to open."
+    if dry_run:
+        return f"[DRY-RUN] Application launch simulated for '{app_name}'."
     success = await asyncio.to_thread(_launch_application_sync, app_name)
     if success:
         return f"Opened {app_name}."
+    # If local executable is not found/installed, check if it is a known web service (e.g. spotify)
+    if app_name in COMMON_WEBSITE_ALIASES:
+        logging.info("Desktop app '%s' not found locally; falling back to opening website.", app_name)
+        return await open_website(app_name, dry_run=dry_run)
     return f"Could not find or launch application '{app_name}'."
 
 
@@ -2548,7 +2554,7 @@ def _extract_search_query(text: str) -> str:
         flags=re.IGNORECASE
     ).strip()
     cleaned = re.sub(
-        r"^(?:search(?:\s+the\s+web)?(?:\s+for)?|google(?:\s+for)?|look\s+up|find)(?:\s+|$)",
+        r"^(?:search(?:\s+(?:the\s+web|the\s+internet|google|web|internet))?(?:\s+for)?|google(?:\s+for)?|look\s+up|find)(?:\s+|$)",
         "",
         cleaned,
         flags=re.IGNORECASE
@@ -2866,6 +2872,208 @@ async def execute_browser_control(action: str, dry_run: bool = False) -> str:
         "refresh": f"Refreshed the page in {browser_name}.",
     }
     return messages.get(action, f"Executed browser command in {browser_name}.")
+
+
+# ---------------------------------------------------------
+# Universal Website Opening & Chrome Navigation
+# ---------------------------------------------------------
+
+COMMON_WEBSITE_ALIASES: Dict[str, Tuple[str, str]] = {
+    "youtube": ("https://www.youtube.com", "YouTube"),
+    "udemy": ("https://www.udemy.com", "Udemy"),
+    "spotify": ("https://open.spotify.com", "Spotify"),
+    "instagram": ("https://www.instagram.com", "Instagram"),
+    "github": ("https://github.com", "GitHub"),
+    "stackoverflow": ("https://stackoverflow.com", "Stack Overflow"),
+    "stack overflow": ("https://stackoverflow.com", "Stack Overflow"),
+    "google": ("https://www.google.com", "Google"),
+    "gmail": ("https://mail.google.com", "Gmail"),
+    "google mail": ("https://mail.google.com", "Gmail"),
+    "google docs": ("https://docs.google.com", "Google Docs"),
+    "google drive": ("https://drive.google.com", "Google Drive"),
+    "google sheets": ("https://sheets.google.com", "Google Sheets"),
+    "google maps": ("https://maps.google.com", "Google Maps"),
+    "google calendar": ("https://calendar.google.com", "Google Calendar"),
+    "twitter": ("https://x.com", "Twitter"),
+    "x": ("https://x.com", "X"),
+    "reddit": ("https://www.reddit.com", "Reddit"),
+    "linkedin": ("https://www.linkedin.com", "LinkedIn"),
+    "facebook": ("https://www.facebook.com", "Facebook"),
+    "netflix": ("https://www.netflix.com", "Netflix"),
+    "amazon": ("https://www.amazon.com", "Amazon"),
+    "wikipedia": ("https://www.wikipedia.org", "Wikipedia"),
+    "chatgpt": ("https://chatgpt.com", "ChatGPT"),
+    "openai": ("https://chatgpt.com", "OpenAI"),
+    "whatsapp web": ("https://web.whatsapp.com", "WhatsApp Web"),
+    "medium": ("https://medium.com", "Medium"),
+    "twitch": ("https://www.twitch.tv", "Twitch"),
+    "discord": ("https://discord.com/app", "Discord"),
+    "quora": ("https://www.quora.com", "Quora"),
+    "pinterest": ("https://www.pinterest.com", "Pinterest"),
+    "coursera": ("https://www.coursera.org", "Coursera"),
+    "leetcode": ("https://leetcode.com", "LeetCode"),
+    "hackerrank": ("https://www.hackerrank.com", "HackerRank"),
+    "kaggle": ("https://www.kaggle.com", "Kaggle"),
+}
+
+_COMMON_FILE_EXTENSIONS: Set[str] = {
+    ".pdf", ".txt", ".py", ".json", ".exe", ".bat", ".cmd", ".ps1", ".dll",
+    ".docx", ".doc", ".xlsx", ".csv", ".png", ".jpg", ".jpeg", ".gif",
+    ".zip", ".tar", ".gz", ".mp3", ".mp4", ".wav", ".log", ".ini", ".cfg"
+}
+
+
+def resolve_website_destination(target: str) -> Optional[Tuple[str, str]]:
+    """
+    Resolves a raw target, alias, domain, or URL into a validated safe HTTP/HTTPS URL and display name.
+    Rejects unsafe schemes (javascript:, file:, data:, vbscript:, etc.) and local file paths.
+    Returns (url, display_name) or None if target is not a valid website destination.
+    """
+    if not target or not target.strip():
+        return None
+    raw = target.strip()
+    raw_lower = raw.lower()
+
+    # Browser applications themselves are desktop applications, not website URLs
+    if raw_lower in ("chrome", "google chrome"):
+        return None
+
+    # Check known aliases
+    if raw_lower in COMMON_WEBSITE_ALIASES:
+        return COMMON_WEBSITE_ALIASES[raw_lower]
+
+    # Support localhost and localhost:port (check before urlparse since urlparse treats 'localhost:' as a scheme)
+    if raw_lower == "localhost" or re.match(r"^localhost:\d+(?:[/:?#]\S*)?$", raw_lower):
+        url = f"https://{raw}"
+        domain = raw.split("/")[0].split("?")[0].split("#")[0]
+        return (url, domain)
+
+    # Explicit schemes
+    parsed = urllib.parse.urlparse(raw)
+    if parsed.scheme:
+        if parsed.scheme.lower() not in ("http", "https"):
+            return None
+        if not parsed.netloc:
+            return None
+        return (raw, parsed.netloc)
+
+    # Reject dangerous pseudo-schemes
+    if any(raw_lower.startswith(p) for p in ("javascript:", "file:", "data:", "vbscript:", "about:")):
+        return None
+
+    # Guard against local files being treated as domains
+    ext = "." + raw_lower.split(".")[-1].split("/")[0].split("?")[0].split("#")[0] if "." in raw_lower else ""
+    if ext in _COMMON_FILE_EXTENSIONS:
+        return None
+
+    # Domain name regex (requires at least one dot, valid domain format, optional port/path)
+    m = re.match(r"^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?::\d+)?(?:[/:?#]\S*)?$", raw)
+    if m:
+        url = f"https://{raw}"
+        domain = raw.split("/")[0].split("?")[0].split("#")[0]
+        return (url, domain)
+
+    return None
+
+
+def _extract_website_target(text: str) -> Optional[str]:
+    """Extracts target website, domain, or URL from natural language commands."""
+    cleaned = text.strip()
+    cleaned = re.sub(r"^(?:(?:hey|hi|hello|ok|okay)?\s*nexa\b\s*[,:]?\s*)+", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(
+        r"^(?:(?:can\s+you\s+please|could\s+you\s+please|would\s+you\s+please|would\s+you\s+mind|can\s+you|could\s+you|would\s+you|please|kindly)\s+)+",
+        "",
+        cleaned,
+        flags=re.IGNORECASE
+    ).strip()
+
+    # Strip trailing punctuation
+    cleaned = re.sub(r"[.!?]+$", "", cleaned).strip()
+
+    # Strip browser target suffixes (e.g. 'in chrome', 'in google chrome', 'on chrome', 'in browser')
+    cleaned = re.sub(r"\s+(?:in|on|using)\s+(?:google\s+chrome|chrome|the\s+browser|browser)$", "", cleaned, flags=re.IGNORECASE).strip()
+
+    # Strip trailing punctuation again if left after suffix removal
+    cleaned = re.sub(r"[.!?]+$", "", cleaned).strip()
+
+    # If the remaining string directly resolves as a website/domain, return it
+    if resolve_website_destination(cleaned):
+        return cleaned
+
+    # Match opening action verbs
+    m = re.match(
+        r"^(?:open|launch|go\s+to|navigate\s+to|visit|browse\s+to)\s+(?:the\s+)?(?:website\s+|site\s+|page\s+|webpage\s+)?(.+)$",
+        cleaned,
+        flags=re.IGNORECASE
+    )
+    if m:
+        target = m.group(1).strip()
+        target = re.sub(r"\s+(?:website|site|page|webpage)$", "", target, flags=re.IGNORECASE).strip()
+        return target
+
+    return None
+
+
+def _is_website_request(text: str) -> bool:
+    """Determines whether a command is a website navigation request."""
+    clean_low = text.strip().lower()
+    # Guard: do not treat explicit search commands as direct website navigation
+    if any(clean_low.startswith(p) for p in ("search ", "google ", "look up ", "find ")):
+        return False
+    target = _extract_website_target(text)
+    if not target:
+        return False
+    return resolve_website_destination(target) is not None
+
+
+async def open_website(target_or_text: str, dry_run: bool = False) -> str:
+    """
+    Opens a website or URL in Google Chrome safely on Windows.
+    Accepts full command phrases ('Open Udemy in Chrome') or raw targets/URLs ('udemy', 'https://github.com').
+    Validates URL scheme (http/https only) and prevents command injection.
+    """
+    global _BROWSER_CONTEXT
+    cleaned = target_or_text.strip()
+    if not cleaned:
+        return "Please specify which website you would like to open."
+
+    resolved = resolve_website_destination(cleaned)
+    if not resolved:
+        extracted = _extract_website_target(cleaned)
+        if extracted:
+            resolved = resolve_website_destination(extracted)
+
+    if not resolved:
+        return f"Could not resolve '{target_or_text}' to a valid website destination."
+
+    url, display_name = resolved
+
+    if dry_run:
+        return f"[DRY-RUN] Opening {display_name} in Google Chrome."
+
+    chrome_exe = _find_chrome_executable()
+    if not chrome_exe:
+        return f"Google Chrome is not installed or could not be found to open {display_name}."
+
+    try:
+        subprocess.Popen([chrome_exe, url])
+    except Exception as e:
+        logging.error("Failed to launch Chrome for '%s': %s", url, e)
+        return f"Failed to open {display_name} in Chrome."
+
+    _BROWSER_CONTEXT = {
+        "browser": "Chrome",
+        "query": display_name,
+        "search_url": url,
+        "active_url": url,
+        "results": [],
+        "history": [url],
+        "history_idx": 0,
+        "opened_by_nexa": True,
+        "timestamp": time.time(),
+    }
+
+    return f"Opened {display_name} in Chrome."
 
 
 async def execute_weather(text: str, context: Optional[Any] = None) -> str:
@@ -3582,6 +3790,31 @@ async def route_intent(
             "result": res
         }
 
+    # 3.5 Intercept opening websites in Chrome (e.g. "open youtube", "open udemy in chrome", "launch spotify", "go to instagram", "open github", "open stackoverflow.com")
+    if _is_website_request(text):
+        if perf_record is not None:
+            t3 = time.perf_counter()
+            perf_record["t3_intent"] = t3
+            perf_record["intent_duration_ms"] = (t3 - t_route_start) * 1000.0
+            perf_record["t4_routing"] = t3
+            perf_record["routing_duration_ms"] = 0.0
+            perf_record["category"] = "Local website navigation"
+        t_act_start = time.perf_counter()
+        res = await open_website(text, dry_run=dry_run)
+        if perf_record is not None:
+            t5 = time.perf_counter()
+            perf_record["t5_action"] = t5
+            perf_record["action_duration_ms"] = (t5 - t_act_start) * 1000.0
+        return {
+            "handled": True,
+            "intent": "OPEN_WEBSITE",
+            "confidence": 1.0,
+            "margin": 1.0,
+            "trusted": True,
+            "fallback": False,
+            "result": res
+        }
+
     # 4. Intercept opening registered applications in COMMON_APPS
     app_candidate = _extract_app_name(text)
     if app_candidate and app_candidate in COMMON_APPS and app_candidate not in ("settings", "windows settings", "system settings"):
@@ -3593,7 +3826,7 @@ async def route_intent(
             perf_record["routing_duration_ms"] = 0.0
             perf_record["category"] = "Local desktop action"
         t_act_start = time.perf_counter()
-        res = await open_application(text)
+        res = await open_application(text, dry_run=dry_run)
         if perf_record is not None:
             t5 = time.perf_counter()
             perf_record["t5_action"] = t5

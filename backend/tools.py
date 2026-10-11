@@ -975,7 +975,9 @@ async def execute_desktop_action(
 ) -> str:
     """
     Execute local Windows desktop actions using NEXA's machine learning intent engine.
-    Controls applications (e.g., Chrome, VS Code, Calculator, Notepad), system volume, display brightness,
+    Controls applications (e.g., Chrome, VS Code, Calculator, Notepad), opens websites in Google Chrome
+    (e.g., 'Open YouTube', 'Open Udemy in Chrome', 'Launch Spotify', 'Go to Instagram', 'Open GitHub', 'Open stackoverflow.com'),
+    system volume, display brightness,
     Windows settings panels (Wi-Fi, Bluetooth, Sound, Display), system resources and hardware health
     (CPU usage, RAM/memory, Battery level and charging status, Storage drive space, Drive health/low storage warning, System load),
     network connectivity and internet health (internet connection status, Wi-Fi network and signal strength, local IP address,
