@@ -1,0 +1,971 @@
+import os
+import sys
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Ensure project root is prioritized and backend does not shadow site-packages
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
+while str(BASE_DIR) in sys.path:
+    sys.path.remove(str(BASE_DIR))
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+sys.path.append(str(BASE_DIR))
+
+load_dotenv(ROOT_DIR / ".env")
+load_dotenv()
+
+import asyncio
+import collections
+import logging
+import time
+import uuid
+import re
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+
+import numpy as np
+
+from livekit import agents, rtc
+from livekit.agents import AgentSession, Agent, RoomInputOptions, AgentServer
+from livekit.agents.llm import ChatContext
+from livekit.plugins import (
+    noise_cancellation,
+    silero,
+)
+from livekit.plugins import google
+from google.genai import types
+
+try:
+    from backend.prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
+    from backend.tools import (
+        get_weather,
+        search_web,
+        send_email,
+        execute_desktop_action,
+        trigger_n8n_workflow,
+        set_reminder,
+        show_reminders,
+        cancel_reminder,
+        cancel_all_reminders,
+        remember_fact,
+        search_memories,
+        forget_memory,
+        read_file_content,
+        close_application,
+        check_running_applications,
+        recover_pending_reminders,
+        clear_pending_email_for_session,
+    )
+    from backend.memory import get_user_memories, format_memories, save_session_context, get_user_name
+    from backend.mcp import get_mcp_tools
+except ImportError:
+    from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
+    from tools import (
+        get_weather,
+        search_web,
+        send_email,
+        execute_desktop_action,
+        trigger_n8n_workflow,
+        set_reminder,
+        show_reminders,
+        cancel_reminder,
+        cancel_all_reminders,
+        remember_fact,
+        search_memories,
+        forget_memory,
+        read_file_content,
+        close_application,
+        check_running_applications,
+        recover_pending_reminders,
+        clear_pending_email_for_session,
+        clear_pending_recipient_verification_for_session,
+    )
+    from memory import get_user_memories, format_memories, save_session_context, get_user_name
+    from backend.mcp import get_mcp_tools
+
+
+
+class Assistant(Agent):
+    def __init__(
+        self,
+        chat_ctx: Optional[ChatContext] = None,
+        extra_tools: Optional[list] = None
+    ) -> None:
+        tools = [
+            get_weather,
+            search_web,
+            send_email,
+            execute_desktop_action,
+            trigger_n8n_workflow,
+            set_reminder,
+            show_reminders,
+            cancel_reminder,
+            cancel_all_reminders,
+            remember_fact,
+            search_memories,
+            forget_memory,
+            read_file_content,
+            close_application,
+            check_running_applications,
+        ]
+        if extra_tools:
+            tools.extend(extra_tools)
+
+        super().__init__(
+            instructions=AGENT_INSTRUCTION,
+            llm=google.beta.realtime.RealtimeModel(
+                voice="Aoede",
+                temperature=0.6,
+                input_audio_transcription=None,
+            ),
+            tools=tools,
+            chat_ctx=chat_ctx,
+        )
+
+
+
+# Safe console encoding for Windows to prevent UnicodeEncodeError
+if sys.platform == "win32":
+    try:
+        if sys.stdout and hasattr(sys.stdout, "reconfigure"):
+            sys.stdout.reconfigure(errors="backslashreplace")
+        if sys.stderr and hasattr(sys.stderr, "reconfigure"):
+            sys.stderr.reconfigure(errors="backslashreplace")
+    except Exception:
+        pass
+
+try:
+    from livekit.agents.voice.room_io import RoomOptions, AudioInputOptions
+    ROOM_OPTS = RoomOptions(
+        audio_input=AudioInputOptions(noise_cancellation=noise_cancellation.BVC()),
+        video_input=True,
+    )
+except ImportError:
+    ROOM_OPTS = None
+
+
+_whisper_model: Optional[object] = None
+
+
+def get_whisper_model():
+    """Retrieve or initialize the cached faster-whisper multilingual model instance."""
+    global _whisper_model
+    if _whisper_model is None:
+        model_name = os.getenv("WHISPER_MODEL", "tiny")
+        model_dir = os.getenv("WHISPER_MODEL_DIR")
+        if not model_dir or not os.path.exists(model_dir):
+            candidate = r"C:\Users\Hp\.gemini\antigravity\brain\38d5aa4b-3360-429a-be27-283ee1e488a8\scratch\models"
+            if os.path.exists(candidate):
+                model_dir = candidate
+            else:
+                model_dir = None
+        logging.info("Initializing local faster-whisper %s model (CPU, int8)...", model_name)
+        try:
+            from faster_whisper import WhisperModel
+            _whisper_model = WhisperModel(
+                model_name,
+                device="cpu",
+                compute_type="int8",
+                download_root=model_dir,
+                cpu_threads=4,
+            )
+            logging.info("Local faster-whisper %s model loaded successfully.", model_name)
+        except Exception as e:
+            logging.error("Failed to load faster-whisper model '%s': %s", model_name, e)
+            raise
+    return _whisper_model
+
+
+def prewarm(proc: agents.JobProcess):
+    """Preload ML model bundle and heavy libraries during worker startup so they do not block the active RTC event loop."""
+    try:
+        from actions import get_model_bundle
+        get_model_bundle()
+    except Exception:
+        pass
+
+    # Preload local faster-whisper tiny.en STT model in worker process
+    try:
+        get_whisper_model()
+    except Exception as e:
+        logging.warning("Failed to prewarm faster-whisper model: %s", e)
+
+    # Preload Silero VAD model in worker process
+    try:
+        silero.VAD.load()
+    except Exception as e:
+        logging.warning("Failed to prewarm Silero VAD: %s", e)
+
+    # Preload Mem0 and vector database dependencies to eliminate lazy-import stalls
+    try:
+        import mem0
+        from mem0 import AsyncMemoryClient
+        try:
+            import qdrant_client
+        except ImportError:
+            pass
+    except Exception:
+        pass
+
+    # Prime default SSL context for network handshakes
+    try:
+        import ssl
+        ssl.create_default_context()
+    except Exception:
+        pass
+
+    # Preload Google GenAI client and websocket modules to avoid event-loop stalls during first connection
+    try:
+        from google import genai
+        import websockets
+    except Exception:
+        pass
+
+    # Preload MCP HTTP transport and SSE client modules to eliminate lazy-import event-loop stalls
+    try:
+        import httpcore2
+        import httpx2
+        from mcp.client.sse import sse_client
+        from mcp.shared._httpx_utils import create_mcp_http_client
+    except Exception:
+        pass
+
+    # Warm up Windows urllib proxy discovery and registry lookup in worker process
+    try:
+        import urllib.request
+        urllib.request.getproxies()
+        urllib.request.proxy_bypass("generativelanguage.googleapis.com:443")
+    except Exception:
+        pass
+
+
+server = AgentServer(setup_fnc=prewarm, num_idle_processes=1)
+
+
+_background_tasks: set[asyncio.Task] = set()
+_active_rooms: set[str] = set()
+
+
+async def _on_job_request(req: agents.JobRequest) -> None:
+    room_name = req.room.name
+    if room_name in _active_rooms:
+        logging.info("Rejecting duplicate agent request for room: %s (job: %s)", room_name, req.id)
+        await req.reject(terminate=True)
+        return
+    _active_rooms.add(room_name)
+    logging.info("Accepting agent job for room: %s (job: %s)", room_name, req.id)
+    await req.accept(identity="nexa-agent", name="NEXA Voice Agent")
+
+
+@server.rtc_session(on_request=_on_job_request)
+async def entrypoint(ctx: agents.JobContext):
+    # Bind active LiveKit room name for session-isolated state
+    active_room_name = ctx.room.name if (ctx.room and getattr(ctx.room, "name", None)) else "default_session"
+    try:
+        from backend.tools import set_current_active_session_id
+    except ImportError:
+        from tools import set_current_active_session_id  # type: ignore
+    set_current_active_session_id(active_room_name)
+
+    # Asynchronously recover and reschedule any pending reminders from SQLite
+    rec_task = asyncio.create_task(recover_pending_reminders())
+    _background_tasks.add(rec_task)
+    rec_task.add_done_callback(_background_tasks.discard)
+
+    user_name = get_user_name()
+    memories = await get_user_memories(user_name)
+    memory_context_str = format_memories(memories, user_name)
+
+    kolkata_tz = timezone(timedelta(hours=5, minutes=30), name="Asia/Kolkata")
+    now_kolkata = datetime.now(kolkata_tz)
+    current_time_str = now_kolkata.strftime("%A, %d %B %Y, %I:%M %p")
+
+    # Discover and connect MCP tools if N8N_MCP_SERVER_URL is configured
+    mcp_server = None
+    mcp_tools = []
+    n8n_mcp_url = os.getenv("N8N_MCP_SERVER_URL")
+    if n8n_mcp_url and n8n_mcp_url.strip():
+        try:
+            mcp_server, mcp_tools = await get_mcp_tools(n8n_mcp_url.strip())
+            if mcp_server is not None:
+                if mcp_tools:
+                    logging.info(f"Connected to MCP server with {len(mcp_tools)} dynamic tools.")
+                else:
+                    logging.info("Connected to MCP server, but 0 tools are exposed in the n8n workflow. Continuing with built-in tools.")
+            else:
+                logging.info("MCP server is offline or unreachable; continuing with built-in tools.")
+        except Exception as e:
+            logging.warning(f"Failed to initialize MCP tools: {e}")
+
+    initial_ctx = ChatContext()
+    context_parts = [
+        f"Current date and time: {current_time_str} IST (Asia/Kolkata, UTC+05:30)."
+    ]
+    if memory_context_str:
+        context_parts.append(f"Context about {user_name}:\n{memory_context_str}")
+
+    # Inspect dynamic capabilities (Google Calendar)
+    has_calendar = any(
+        "calendar" in (getattr(getattr(t, "info", None), "name", None) or getattr(t, "fn", t).__name__).lower()
+        for t in mcp_tools
+    )
+    if not has_calendar:
+        context_parts.append(
+            "Service status: Google Calendar integration is currently OFFLINE / unavailable. "
+            "If the user asks to schedule a calendar event or appointment, inform them clearly that "
+            "Google Calendar integration is currently unavailable. Never fabricate a calendar confirmation or event ID."
+        )
+
+    initial_ctx.add_message(
+        role="assistant",
+        content="\n\n".join(context_parts),
+    )
+
+    agent = Assistant(chat_ctx=initial_ctx, extra_tools=mcp_tools)
+    session = AgentSession(vad=silero.VAD.load())
+
+    # Local faster-whisper STT pipeline: audio buffer, off-thread worker, and live text publisher
+    whisper_model = get_whisper_model()
+    transcription_queue: asyncio.Queue = asyncio.Queue(maxsize=5)
+    tapped_tracks: set[str] = set()
+
+    pre_roll_chunks: collections.deque[bytes] = collections.deque(maxlen=25)
+    speech_chunks: list[bytes] = []
+    is_user_speaking: bool = False
+    active_user_identity: str = "user"
+
+    def _resolve_user_identity(explicit_id: Optional[str] = None) -> str:
+        nonlocal active_user_identity
+        if explicit_id and "agent" not in explicit_id.lower():
+            active_user_identity = explicit_id
+            return explicit_id
+        for p in ctx.room.remote_participants.values():
+            if "agent" not in p.identity.lower():
+                active_user_identity = p.identity
+                return p.identity
+        return active_user_identity or "user"
+
+    def _finalize_speech_segment():
+        nonlocal is_user_speaking, speech_chunks
+        is_user_speaking = False
+        if not speech_chunks:
+            return
+        audio_payload = b"".join(speech_chunks)
+        speech_chunks = []
+        # Require at least ~200ms of audio (16000 * 2 * 0.2 = 6400 bytes)
+        if len(audio_payload) < 6400:
+            return
+        user_id = _resolve_user_identity()
+        logging.info(
+            "STT_SEGMENT_QUEUED: duration=%.2fs (%d bytes), user=%s",
+            len(audio_payload) / 32000.0,
+            len(audio_payload),
+            user_id,
+        )
+        try:
+            transcription_queue.put_nowait((audio_payload, user_id))
+        except asyncio.QueueFull:
+            logging.warning("Transcription queue full; dropping audio chunk")
+
+    async def _transcription_worker_loop():
+        while True:
+            try:
+                item = await transcription_queue.get()
+                if item is None:
+                    break
+                audio_payload, user_id = item
+                try:
+                    audio_np = np.frombuffer(audio_payload, dtype=np.int16).astype(np.float32) / 32768.0
+
+                    def _sync_transcribe(m, arr):
+                        segments, info = m.transcribe(arr, beam_size=1, language=None, vad_filter=False)
+                        text = " ".join(s.text.strip() for s in segments if s.text.strip()).strip()
+                        detected_lang = getattr(info, "language", "en")
+                        lang_prob = getattr(info, "language_probability", 1.0)
+                        return text, detected_lang, lang_prob
+
+                    t0 = time.monotonic()
+                    recognized_text, detected_lang, lang_prob = await asyncio.to_thread(_sync_transcribe, whisper_model, audio_np)
+                    latency = time.monotonic() - t0
+                    if recognized_text:
+                        logging.info(
+                            "STT_WHISPER_DONE: lang=%s (prob=%.2f), latency=%.3fs, chars=%d, text=%r",
+                            detected_lang,
+                            lang_prob,
+                            latency,
+                            len(recognized_text),
+                            recognized_text,
+                        )
+                        logging.info("TRANSCRIPT: %s", recognized_text)
+                        logging.info("USER_TRANSCRIPT: %s", recognized_text)
+                        logging.info("COMMAND SUBMITTED: %s", recognized_text)
+
+                        # 1. Publish to LiveKit topic for ChatPanel rendering
+                        segment_id = str(uuid.uuid4())
+                        writer = None
+                        try:
+                            writer = await ctx.room.local_participant.stream_text(
+                                topic="lk.transcription",
+                                sender_identity=user_id,
+                                attributes={
+                                    "lk.transcription_final": "true",
+                                    "lk.segment_id": segment_id,
+                                    "role": "user",
+                                },
+                            )
+                            await writer.write(recognized_text)
+                            logging.info(
+                                "STT_STREAM_PUBLISHED: topic=lk.transcription, segment_id=%s, role=user, chars=%d",
+                                segment_id,
+                                len(recognized_text),
+                            )
+                        except Exception as pub_err:
+                            logging.warning("Failed to publish user transcript: %s", pub_err)
+                        finally:
+                            if writer is not None:
+                                try:
+                                    await writer.aclose()
+                                except Exception:
+                                    pass
+
+                        # 2. Update agent chat_ctx so session memory / Mem0 context contains user text
+                        if hasattr(agent, "chat_ctx") and agent.chat_ctx:
+                            try:
+                                new_ctx = agent.chat_ctx.copy()
+                                new_ctx.add_message(role="user", content=recognized_text)
+                                await agent.update_chat_ctx(new_ctx)
+                            except Exception as ctx_err:
+                                logging.warning("Failed to update agent chat context: %s", ctx_err)
+
+                        # 2.5 Deterministic email approval/cancellation if an unexpired email draft is pending for this session
+                        active_room_name = ctx.room.name if (ctx.room and getattr(ctx.room, "name", None)) else "default_session"
+                        try:
+                            from backend.tools import has_pending_email_for_session
+                            from backend.actions import handle_local_email_approval
+                        except ImportError:
+                            from tools import has_pending_email_for_session  # type: ignore
+                            from actions import handle_local_email_approval  # type: ignore
+
+                        email_approval_handled = False
+                        if has_pending_email_for_session(active_room_name):
+                            email_app_res = await handle_local_email_approval(
+                                recognized_text,
+                                session_id=active_room_name,
+                                user_authorized=True,
+                            )
+                            if email_app_res and email_app_res.get("handled"):
+                                email_approval_handled = True
+                                intent_name = email_app_res.get("intent", "EMAIL_APPROVAL")
+                                status_name = email_app_res.get("status", "SUCCESS")
+                                res_msg = email_app_res.get("result", "")
+
+                                # Safe controlled spoken message mapped to verified status
+                                if status_name == "SUCCESS":
+                                    spoken_msg = "Your email has been sent successfully."
+                                elif status_name == "CANCELLED":
+                                    spoken_msg = "Your email draft has been cancelled."
+                                elif status_name == "UNCERTAIN":
+                                    spoken_msg = "Warning: Connection dropped during transmission. Delivery status is uncertain. Please check your Sent Mail."
+                                elif status_name == "DUPLICATE":
+                                    spoken_msg = "Notice: Duplicate email dispatch prevented. An email with this subject was already sent moments ago."
+                                else:
+                                    spoken_msg = email_app_res.get("spoken_response") or "Email sending failed. Please check your connection and try again."
+
+                                logging.info(
+                                    "LOCAL_EMAIL_APPROVAL_DISPATCH: intent=%s, status=%s, spoken=%s, result=%s",
+                                    intent_name,
+                                    status_name,
+                                    spoken_msg,
+                                    res_msg,
+                                )
+
+                                # 1. Stop Gemini from continuing or generating any stale/contradictory response
+                                if session:
+                                    try:
+                                        if hasattr(session, "interrupt"):
+                                            int_fut = session.interrupt(force=True)
+                                            if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                                try:
+                                                    await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                                except Exception:
+                                                    pass
+                                    except Exception as int_err:
+                                        logging.debug("Could not interrupt session on email approval: %s", int_err)
+                                    try:
+                                        if hasattr(session, "clear_user_turn"):
+                                            session.clear_user_turn()
+                                    except Exception as cut_err:
+                                        logging.debug("Could not clear user turn on email approval: %s", cut_err)
+
+                                # 2. Publish assistant confirmation to LiveKit topic for ChatPanel rendering
+                                if spoken_msg and ctx.room and ctx.room.local_participant:
+                                    ea_writer = None
+                                    try:
+                                        ea_writer = await ctx.room.local_participant.stream_text(
+                                            topic="lk.transcription",
+                                            sender_identity="assistant",
+                                            attributes={
+                                                "lk.transcription_final": "true",
+                                                "lk.segment_id": str(uuid.uuid4()),
+                                                "role": "assistant",
+                                            },
+                                        )
+                                        await ea_writer.write(spoken_msg)
+                                    except Exception as stream_err:
+                                        logging.debug("Could not stream email confirmation to lk.transcription: %s", stream_err)
+                                    finally:
+                                        if ea_writer is not None:
+                                            try:
+                                                await ea_writer.aclose()
+                                            except Exception:
+                                                pass
+
+                                # 3. Update agent chat_ctx with verified assistant confirmation so model memory is current
+                                if hasattr(agent, "chat_ctx") and agent.chat_ctx and spoken_msg:
+                                    try:
+                                        new_ctx_ea = agent.chat_ctx.copy()
+                                        new_ctx_ea.add_message(role="assistant", content=spoken_msg)
+                                        await agent.update_chat_ctx(new_ctx_ea)
+                                    except Exception as ctx_ea_err:
+                                        logging.warning("Failed to update chat context with email confirmation: %s", ctx_ea_err)
+
+                                # 4. Speak the verified final confirmation to the user without calling any tools
+                                if session and spoken_msg:
+                                    try:
+                                        clean_reply_text = re.sub(r"['\"\\]", "", spoken_msg).strip()
+                                        reply_instruction = (
+                                            f"Say to the user: '{clean_reply_text}'. "
+                                            "Never mention that the email is staged or awaiting approval. "
+                                            "Do not invoke any tools."
+                                        )
+                                        if hasattr(session, "generate_reply"):
+                                            reply_res = session.generate_reply(
+                                                instructions=reply_instruction,
+                                                tool_choice="none",
+                                            )
+                                            if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
+                                                await reply_res
+                                        logging.info("LOCAL_EMAIL_CONFIRMATION_SPOKEN: %s", spoken_msg)
+                                    except Exception as reply_err:
+                                        logging.warning("Failed to generate spoken reply for email confirmation: %s", reply_err)
+
+                        # 2.6 Deterministic recipient verification if candidate recipient is pending for this session (Phase 1)
+                        if not email_approval_handled:
+                            try:
+                                from backend.tools import has_pending_recipient_verification_for_session
+                                from backend.actions import handle_local_recipient_verification
+                            except ImportError:
+                                from tools import has_pending_recipient_verification_for_session  # type: ignore
+                                from actions import handle_local_recipient_verification  # type: ignore
+
+                            if has_pending_recipient_verification_for_session(active_room_name):
+                                recip_ver_res = await handle_local_recipient_verification(
+                                    recognized_text,
+                                    session_id=active_room_name,
+                                    user_authorized=True,
+                                )
+                                if recip_ver_res and recip_ver_res.get("handled"):
+                                    email_approval_handled = True
+                                    intent_name = recip_ver_res.get("intent", "RECIPIENT_VERIFICATION")
+                                    status_name = recip_ver_res.get("status", "VERIFIED")
+                                    spoken_msg = recip_ver_res.get("spoken_response") or "Recipient verification updated."
+                                    res_msg = recip_ver_res.get("result", "")
+
+                                    logging.info(
+                                        "LOCAL_RECIPIENT_VERIFICATION_DISPATCH: intent=%s, status=%s, spoken=%s",
+                                        intent_name,
+                                        status_name,
+                                        spoken_msg,
+                                    )
+
+                                    # 1. Stop Gemini from continuing or generating any conflicting response
+                                    if session:
+                                        try:
+                                            if hasattr(session, "interrupt"):
+                                                int_fut = session.interrupt(force=True)
+                                                if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                                    try:
+                                                        await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                                    except Exception:
+                                                        pass
+                                        except Exception as int_err:
+                                            logging.debug("Could not interrupt session on recipient verification: %s", int_err)
+                                        try:
+                                            if hasattr(session, "clear_user_turn"):
+                                                session.clear_user_turn()
+                                        except Exception as cut_err:
+                                            logging.debug("Could not clear user turn on recipient verification: %s", cut_err)
+
+                                    # 2. Publish assistant update to LiveKit topic for ChatPanel rendering
+                                    if spoken_msg and ctx.room and ctx.room.local_participant:
+                                        rv_writer = None
+                                        try:
+                                            rv_writer = await ctx.room.local_participant.stream_text(
+                                                topic="lk.transcription",
+                                                sender_identity="assistant",
+                                                attributes={
+                                                    "lk.transcription_final": "true",
+                                                    "lk.segment_id": str(uuid.uuid4()),
+                                                    "role": "assistant",
+                                                },
+                                            )
+                                            await rv_writer.write(spoken_msg)
+                                        except Exception as stream_err:
+                                            logging.debug("Could not stream recipient verification to lk.transcription: %s", stream_err)
+                                        finally:
+                                            if rv_writer is not None:
+                                                try:
+                                                    await rv_writer.aclose()
+                                                except Exception:
+                                                    pass
+
+                                    # 3. Update agent chat_ctx with assistant message so model memory is current
+                                    if hasattr(agent, "chat_ctx") and agent.chat_ctx and spoken_msg:
+                                        try:
+                                            new_ctx_rv = agent.chat_ctx.copy()
+                                            new_ctx_rv.add_message(role="assistant", content=spoken_msg)
+                                            await agent.update_chat_ctx(new_ctx_rv)
+                                        except Exception as ctx_rv_err:
+                                            logging.warning("Failed to update chat context with recipient verification: %s", ctx_rv_err)
+
+                                    # 4. Speak the verified message to the user without calling any tools
+                                    if session and spoken_msg:
+                                        try:
+                                            clean_reply_text = re.sub(r"['\"\\]", "", spoken_msg).strip()
+                                            reply_instruction = (
+                                                f"Say to the user: '{clean_reply_text}'. "
+                                                "Do not invoke any tools."
+                                            )
+                                            if hasattr(session, "generate_reply"):
+                                                reply_res = session.generate_reply(
+                                                    instructions=reply_instruction,
+                                                    tool_choice="none",
+                                                )
+                                                if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
+                                                    await reply_res
+                                            logging.info("LOCAL_RECIPIENT_VERIFICATION_SPOKEN: %s", spoken_msg)
+                                        except Exception as reply_err:
+                                            logging.warning("Failed to generate spoken reply for recipient verification: %s", reply_err)
+
+                        # 3. Deterministic local execution for high-confidence supported intents (Priority 1)
+                        if not email_approval_handled:
+                            try:
+                                from backend.actions import handle_local_speech_intent
+                            except ImportError:
+                                from actions import handle_local_speech_intent  # type: ignore
+
+                            try:
+                                local_res = await handle_local_speech_intent(recognized_text)
+                            except Exception as local_err:
+                                logging.debug("Error in local speech intent handler: %s", local_err)
+                                local_res = None
+
+                            if local_res and local_res.get("handled"):
+                                intent_name = local_res.get("intent")
+                                res_msg = local_res.get("result", "")
+                                logging.info(
+                                    "LOCAL_SPEECH_DISPATCH: intent=%s, result=%s",
+                                    intent_name,
+                                    res_msg,
+                                )
+
+                                # Stream assistant confirmation to LiveKit topic for ChatPanel rendering
+                                if res_msg and ctx.room and ctx.room.local_participant:
+                                    a_writer = None
+                                    try:
+                                        a_writer = await ctx.room.local_participant.stream_text(
+                                            topic="lk.transcription",
+                                            sender_identity="assistant",
+                                            attributes={
+                                                "lk.transcription_final": "true",
+                                                "lk.segment_id": str(uuid.uuid4()),
+                                                "role": "assistant",
+                                            },
+                                        )
+                                        await a_writer.write(res_msg)
+                                        logging.info(
+                                            "LOCAL_CONFIRMATION_STREAMED: topic=lk.transcription, role=assistant, chars=%d",
+                                            len(res_msg),
+                                        )
+                                    except Exception as stream_err:
+                                        logging.debug("Could not stream local confirmation to lk.transcription: %s", stream_err)
+                                    finally:
+                                        if a_writer is not None:
+                                            try:
+                                                await a_writer.aclose()
+                                            except Exception:
+                                                pass
+
+                                # Update agent chat_ctx with assistant confirmation
+                                if hasattr(agent, "chat_ctx") and agent.chat_ctx and res_msg:
+                                    try:
+                                        new_ctx = agent.chat_ctx.copy()
+                                        new_ctx.add_message(role="assistant", content=res_msg)
+                                        await agent.update_chat_ctx(new_ctx)
+                                    except Exception as a_ctx_err:
+                                        logging.debug("Failed to append local assistant confirmation to chat_ctx: %s", a_ctx_err)
+                except Exception as tr_err:
+                    logging.warning("Failed to transcribe speech segment: %s", tr_err)
+                finally:
+                    transcription_queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logging.warning("Unexpected error in transcription worker: %s", e)
+
+    tr_worker_task = asyncio.create_task(_transcription_worker_loop())
+    _background_tasks.add(tr_worker_task)
+    tr_worker_task.add_done_callback(_background_tasks.discard)
+
+    async def _tap_audio_track(track: rtc.Track, participant: Optional[rtc.RemoteParticipant]):
+        nonlocal is_user_speaking, speech_chunks
+        p_identity = participant.identity if participant else "user"
+        _resolve_user_identity(p_identity)
+        try:
+            audio_stream = rtc.AudioStream(track, sample_rate=16000, num_channels=1)
+            logging.info("Started local STT audio tap on track %s (participant: %s)", track.sid, p_identity)
+            async for ev in audio_stream:
+                pcm_bytes = bytes(ev.frame.data)
+                if is_user_speaking:
+                    speech_chunks.append(pcm_bytes)
+                    if sum(len(c) for c in speech_chunks) >= 384000:
+                        _finalize_speech_segment()
+                else:
+                    pre_roll_chunks.append(pcm_bytes)
+        except asyncio.CancelledError:
+            pass
+        except Exception as tap_err:
+            logging.warning("Audio tap error on track %s: %s", track.sid, tap_err)
+
+    def _start_audio_tap(track: rtc.Track, participant: rtc.RemoteParticipant):
+        if track.sid in tapped_tracks:
+            return
+        tapped_tracks.add(track.sid)
+        tap_task = asyncio.create_task(_tap_audio_track(track, participant))
+        _background_tasks.add(tap_task)
+        tap_task.add_done_callback(_background_tasks.discard)
+
+    try:
+        from livekit.agents.voice.room_io import RoomOptions, AudioInputOptions
+        room_opts = RoomOptions(
+            audio_input=AudioInputOptions(noise_cancellation=noise_cancellation.BVC()),
+            video_input=True,
+            participant_kinds=[rtc.ParticipantKind.PARTICIPANT_KIND_STANDARD],
+        )
+        start_kwargs = {
+            "room": ctx.room,
+            "agent": agent,
+            "room_options": room_opts,
+        }
+    except Exception:
+        start_kwargs = {
+            "room": ctx.room,
+            "agent": agent,
+            "room_input_options": RoomInputOptions(
+                video_enabled=True,
+                noise_cancellation=noise_cancellation.BVC(),
+            ),
+        }
+
+    # Diagnostic Logging & Speech Segmentation Event Handlers
+    @session.on("user_state_changed")
+    def _on_user_state(ev):
+        nonlocal is_user_speaking, speech_chunks
+        st = getattr(ev, "new_state", ev)
+        if st == "speaking":
+            logging.info("SPEECH DETECTED")
+            logging.info("STT STARTED")
+            logging.info("USER_SPEECH_STARTED")
+            is_user_speaking = True
+            speech_chunks = list(pre_roll_chunks)
+            pre_roll_chunks.clear()
+        elif st == "listening":
+            logging.info("USER_SPEECH_STOPPED")
+            if is_user_speaking:
+                _finalize_speech_segment()
+
+    @session.on("user_input_transcribed")
+    def _on_user_input(ev):
+        transcript = getattr(ev, "transcript", "")
+        if transcript and transcript.strip():
+            cleaned = re.sub(r"<ctrl\d+>", "", transcript).strip()
+            if cleaned:
+                logging.info("TRANSCRIPT: %s", cleaned)
+                logging.info("USER_TRANSCRIPT: %s", cleaned)
+                if getattr(ev, "is_final", False):
+                    logging.info("COMMAND SUBMITTED: %s", cleaned)
+
+    @session.on("agent_state_changed")
+    def _on_agent_state(ev):
+        st = getattr(ev, "new_state", ev)
+        if st == "speaking":
+            logging.info("TTS STARTED")
+            logging.info("ASSISTANT_SPEECH_STARTED")
+        elif st == "thinking":
+            logging.info("RESPONSE GENERATED")
+
+    @session.on("conversation_item_added")
+    def _on_conv_item(ev):
+        item = getattr(ev, "item", ev)
+        role = getattr(item, "role", "")
+        text = getattr(item, "text_content", "") or getattr(item, "content", "")
+        if isinstance(text, list):
+            text = " ".join(str(p) for p in text)
+        if text and text.strip():
+            if role == "assistant":
+                cleaned_assistant_text = re.sub(r"<ctrl\d+>", "", text).strip()
+                if cleaned_assistant_text:
+                    logging.info("ASSISTANT_TRANSCRIPT: %s", cleaned_assistant_text)
+                else:
+                    logging.debug("Filtered raw control tokens from ASSISTANT_TRANSCRIPT: %s", text.strip())
+            elif role == "user":
+                cleaned_user_text = re.sub(r"<ctrl\d+>", "", text).strip()
+                if cleaned_user_text:
+                    logging.info("USER_TRANSCRIPT: %s", cleaned_user_text)
+
+        # Native playback metrics (safe, numeric only, no transcripts)
+        metrics = getattr(item, "metrics", None)
+        if metrics is not None:
+            started = metrics.get("started_speaking_at") if isinstance(metrics, dict) else getattr(metrics, "started_speaking_at", None)
+            stopped = metrics.get("stopped_speaking_at") if isinstance(metrics, dict) else getattr(metrics, "stopped_speaking_at", None)
+            playback_lat = metrics.get("playback_latency") if isinstance(metrics, dict) else getattr(metrics, "playback_latency", None)
+            if role == "assistant" and started is not None and stopped is not None:
+                duration = max(0.0, stopped - started)
+                lat_str = f", playback_latency={playback_lat:.3f}s" if isinstance(playback_lat, (int, float)) else ""
+                interrupted = bool(getattr(item, "interrupted", False))
+                logging.info(
+                    "NATIVE_METRICS [Assistant Audio]: playback_duration=%.3fs%s, interrupted=%s",
+                    duration,
+                    lat_str,
+                    interrupted,
+                )
+
+    @session.on("metrics_collected")
+    def _on_metrics_collected(ev):
+        metrics = getattr(ev, "metrics", ev)
+        m_type = getattr(metrics, "type", "")
+        if m_type == "realtime_model_metrics":
+            ttft = getattr(metrics, "ttft", None)
+            duration = getattr(metrics, "duration", None)
+            tps = getattr(metrics, "tokens_per_second", None)
+            in_tokens = getattr(metrics, "input_tokens", None)
+            out_tokens = getattr(metrics, "output_tokens", None)
+            cancelled = getattr(metrics, "cancelled", None)
+
+            if out_tokens == 0 and duration == 0.0:
+                return
+
+            ttft_str = f"ttft={ttft:.3f}s" if (isinstance(ttft, (int, float)) and ttft >= 0) else "ttft=N/A"
+            dur_str = f"gen_duration={duration:.3f}s" if isinstance(duration, (int, float)) else "gen_duration=N/A"
+            tps_str = f"speed={tps:.1f}tok/s" if isinstance(tps, (int, float)) else "speed=N/A"
+            tok_str = f"tokens={in_tokens}in/{out_tokens}out" if (in_tokens is not None and out_tokens is not None) else ""
+            canc_str = f"cancelled={cancelled}" if cancelled is not None else ""
+
+            parts = [p for p in [ttft_str, dur_str, tps_str, tok_str, canc_str] if p]
+            logging.info("NATIVE_METRICS [Gemini Realtime]: %s", ", ".join(parts))
+
+        elif m_type == "eou_metrics":
+            eot_delay = getattr(metrics, "end_of_utterance_delay", None)
+            stt_delay = getattr(metrics, "transcription_delay", None)
+            eot_str = f"eot_delay={eot_delay:.3f}s" if isinstance(eot_delay, (int, float)) else "eot_delay=N/A"
+            stt_str = f"stt_delay={stt_delay:.3f}s" if isinstance(stt_delay, (int, float)) else "stt_delay=N/A"
+            logging.info("NATIVE_METRICS [Turn Detection]: %s, %s", eot_str, stt_str)
+
+    @ctx.room.on("track_subscribed")
+    def _on_track_subscribed(track, pub, participant):
+        if track.kind == rtc.TrackKind.KIND_AUDIO:
+            p_id = participant.identity if participant else "unknown"
+            logging.info("MIC TRACK RECEIVED: %s from %s (source: %s)", track.sid, p_id, pub.source)
+            if participant and "agent" not in participant.identity.lower():
+                _start_audio_tap(track, participant)
+
+    @ctx.room.on("participant_connected")
+    def _on_p_connected(p):
+        if not p:
+            return
+        if "agent" in p.identity.lower():
+            logging.info("AGENT JOINED: %s", p.identity)
+        else:
+            logging.info("USER JOINED: Participant %s connected to room", p.identity)
+            for pub in p.track_publications.values():
+                if pub.track and pub.track.kind == rtc.TrackKind.KIND_AUDIO:
+                    _start_audio_tap(pub.track, p)
+
+    await session.start(**start_kwargs)
+
+    await ctx.connect()
+    logging.info("LIVEKIT CONNECTED: Room %s", ctx.room.name)
+    logging.info("AGENT JOINED: Agent active in room %s", ctx.room.name)
+
+    # Immediately tap any already connected remote user audio tracks
+    for p in ctx.room.remote_participants.values():
+        if "agent" not in p.identity.lower():
+            for pub in p.track_publications.values():
+                if pub.track and pub.track.kind == rtc.TrackKind.KIND_AUDIO:
+                    _start_audio_tap(pub.track, p)
+
+    greeting_task: Optional[asyncio.Task] = None
+
+    async def _shutdown_hook() -> None:
+        _active_rooms.discard(ctx.room.name)
+        try:
+            clear_pending_email_for_session(ctx.room.name)
+            clear_pending_recipient_verification_for_session(ctx.room.name)
+        except Exception as e:
+            logging.debug("Error clearing room email staging on shutdown: %s", e)
+        if greeting_task and not greeting_task.done():
+            greeting_task.cancel()
+            try:
+                await greeting_task
+            except asyncio.CancelledError:
+                pass
+            except Exception as e:
+                logging.debug("Error awaiting cancelled greeting task: %s", e)
+        if not tr_worker_task.done():
+            tr_worker_task.cancel()
+        try:
+            if hasattr(agent, "chat_ctx") and agent.chat_ctx:
+                await asyncio.wait_for(
+                    save_session_context(
+                        chat_ctx=agent.chat_ctx,
+                        user_id=user_name,
+                        memory_context_str=memory_context_str,
+                    ),
+                    timeout=5.0,
+                )
+        except asyncio.TimeoutError:
+            logging.warning("Memory shutdown callback timed out after 5.0 seconds.")
+        except Exception as e:
+            logging.warning(f"Error in memory shutdown callback: {type(e).__name__}")
+
+        if mcp_server is not None:
+            try:
+                await asyncio.wait_for(mcp_server.cleanup(), timeout=3.0)
+            except asyncio.TimeoutError:
+                logging.debug("MCP server cleanup timed out.")
+            except Exception as e:
+                logging.debug(f"Error cleaning up MCP server: {e}")
+
+    ctx.add_shutdown_callback(_shutdown_hook)
+
+    async def _play_greeting() -> None:
+        try:
+            await session.generate_reply(
+                instructions=SESSION_INSTRUCTION,
+            )
+        except asyncio.CancelledError:
+            pass
+        except Exception as reply_err:
+            logging.info("Initial greeting skipped or interrupted: %s", reply_err)
+
+    greeting_task = asyncio.create_task(_play_greeting(), name="nexa_initial_greeting")
+    _background_tasks.add(greeting_task)
+    greeting_task.add_done_callback(_background_tasks.discard)
+
+
+if __name__ == "__main__":
+    agents.cli.run_app(server)
+
+

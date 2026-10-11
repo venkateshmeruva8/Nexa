@@ -1,0 +1,1402 @@
+text,intent
+cancel reminder 1,CANCEL_REMINDER
+delete reminder 5,CANCEL_REMINDER
+remove reminder 10,CANCEL_REMINDER
+cancel my reminder for meeting,CANCEL_REMINDER
+clear my reminders,CANCEL_REMINDER
+cancel all reminders,CANCEL_REMINDER
+delete all my reminders,CANCEL_REMINDER
+remove all pending reminders,CANCEL_REMINDER
+cancel the reminder to call mom,CANCEL_REMINDER
+delete the reminder about groceries,CANCEL_REMINDER
+stop the timer,CANCEL_REMINDER
+cancel active reminder,CANCEL_REMINDER
+dismiss reminder,CANCEL_REMINDER
+delete reminder number 3,CANCEL_REMINDER
+remove reminder number 2,CANCEL_REMINDER
+clear all scheduled reminders,CANCEL_REMINDER
+drop reminder 4,CANCEL_REMINDER
+cancel all pending alarms,CANCEL_REMINDER
+remove that reminder,CANCEL_REMINDER
+cancel the reminder i just set,CANCEL_REMINDER
+clear reminder list,CANCEL_REMINDER
+wipe all reminders,CANCEL_REMINDER
+delete reminder with id 12,CANCEL_REMINDER
+cancel reminder 8,CANCEL_REMINDER
+delete scheduled reminder,CANCEL_REMINDER
+close google chrome,CLOSE_APPLICATION
+exit notepad,CLOSE_APPLICATION
+terminate vs code,CLOSE_APPLICATION
+quit spotify,CLOSE_APPLICATION
+kill calculator,CLOSE_APPLICATION
+close visual studio code,CLOSE_APPLICATION
+exit microsoft edge,CLOSE_APPLICATION
+close the calculator app,CLOSE_APPLICATION
+terminate notepad process,CLOSE_APPLICATION
+quit chrome browser,CLOSE_APPLICATION
+close spotify,CLOSE_APPLICATION
+kill notepad,CLOSE_APPLICATION
+exit spotify application,CLOSE_APPLICATION
+close edge,CLOSE_APPLICATION
+terminate chrome,CLOSE_APPLICATION
+quit visual studio code,CLOSE_APPLICATION
+close the terminal,CLOSE_APPLICATION
+exit windows terminal,CLOSE_APPLICATION
+close paint,CLOSE_APPLICATION
+terminate powershell,CLOSE_APPLICATION
+quit command prompt,CLOSE_APPLICATION
+kill spotify process,CLOSE_APPLICATION
+close calc,CLOSE_APPLICATION
+exit chrome,CLOSE_APPLICATION
+close active application,CLOSE_APPLICATION
+terminate the browser,CLOSE_APPLICATION
+quit calculator,CLOSE_APPLICATION
+exit paint program,CLOSE_APPLICATION
+shut down chrome application,CLOSE_APPLICATION
+create a meeting tomorrow,CREATE_CALENDAR_EVENT
+schedule a meeting tomorrow at 3 pm,CREATE_CALENDAR_EVENT
+schedule a test meeting on 5th october from 11 am to 12 pm,CREATE_CALENDAR_EVENT
+add a meeting to my calendar with subject sprint review,CREATE_CALENDAR_EVENT
+create an event on google calendar for friday from 10 to 11 am,CREATE_CALENDAR_EVENT
+schedule an event on my calendar for team sync at 2 pm,CREATE_CALENDAR_EVENT
+book a meeting on google calendar for tomorrow at 4 pm,CREATE_CALENDAR_EVENT
+set up a meeting on calendar for monday from 9 am to 10 am,CREATE_CALENDAR_EVENT
+schedule a call with the client on wednesday at 3 pm,CREATE_CALENDAR_EVENT
+create a calendar event for project retrospective tomorrow at 2 pm,CREATE_CALENDAR_EVENT
+add an event to calendar titled product launch on october 15,CREATE_CALENDAR_EVENT
+schedule meeting on calendar for design review at 11 am,CREATE_CALENDAR_EVENT
+book an appointment on my calendar for friday at 1 pm,CREATE_CALENDAR_EVENT
+schedule a discussion on google calendar from 10 am to 11 am,CREATE_CALENDAR_EVENT
+add a meeting to calendar tomorrow from 1 pm to 2 pm,CREATE_CALENDAR_EVENT
+create a new event in google calendar for team sync,CREATE_CALENDAR_EVENT
+schedule a quick call in my calendar for 4 pm,CREATE_CALENDAR_EVENT
+set up a calendar event for quarterly planning next monday,CREATE_CALENDAR_EVENT
+book meeting on my calendar with engineering team,CREATE_CALENDAR_EVENT
+add calendar entry for sprint demo on friday at 3 pm,CREATE_CALENDAR_EVENT
+create a meeting titled architecture review from 2 pm to 3 pm,CREATE_CALENDAR_EVENT
+schedule calendar invite for budget meeting at 11 am,CREATE_CALENDAR_EVENT
+put a meeting on my calendar for tomorrow at 5 pm,CREATE_CALENDAR_EVENT
+schedule an interview on my calendar for thursday at 2 pm,CREATE_CALENDAR_EVENT
+create calendar meeting for status update at 10 am,CREATE_CALENDAR_EVENT
+add to my google calendar meeting with marketing at 3 pm,CREATE_CALENDAR_EVENT
+schedule event on google calendar called one on one at 4 pm,CREATE_CALENDAR_EVENT
+book a calendar event for tomorrow afternoon,CREATE_CALENDAR_EVENT
+set a meeting on calendar for client demo on tuesday,CREATE_CALENDAR_EVENT
+schedule a calendar event from 11 am to 12 pm tomorrow,CREATE_CALENDAR_EVENT
+create an appointment on my calendar for 2 pm,CREATE_CALENDAR_EVENT
+add event to my calendar tomorrow at noon,CREATE_CALENDAR_EVENT
+schedule sync meeting on google calendar,CREATE_CALENDAR_EVENT
+book an event on calendar for team catch up,CREATE_CALENDAR_EVENT
+create a calendar reminder for weekly standup,CREATE_CALENDAR_EVENT
+decrease brightness,DECREASE_BRIGHTNESS
+dim screen,DECREASE_BRIGHTNESS
+lower brightness,DECREASE_BRIGHTNESS
+turn down brightness,DECREASE_BRIGHTNESS
+make screen dimmer,DECREASE_BRIGHTNESS
+dim display,DECREASE_BRIGHTNESS
+brightness down,DECREASE_BRIGHTNESS
+lower screen brightness,DECREASE_BRIGHTNESS
+reduce brightness,DECREASE_BRIGHTNESS
+decrease display brightness,DECREASE_BRIGHTNESS
+make display dimmer,DECREASE_BRIGHTNESS
+turn brightness down,DECREASE_BRIGHTNESS
+dim the monitor,DECREASE_BRIGHTNESS
+reduce screen brightness,DECREASE_BRIGHTNESS
+make screen darker,DECREASE_BRIGHTNESS
+drop the brightness,DECREASE_BRIGHTNESS
+soften display brightness,DECREASE_BRIGHTNESS
+lower monitor brightness,DECREASE_BRIGHTNESS
+turn down monitor brightness,DECREASE_BRIGHTNESS
+dim brightness,DECREASE_BRIGHTNESS
+make monitor dimmer,DECREASE_BRIGHTNESS
+dim screen down,DECREASE_BRIGHTNESS
+lower display brightness,DECREASE_BRIGHTNESS
+screen brightness down,DECREASE_BRIGHTNESS
+lower the screen light,DECREASE_BRIGHTNESS
+turn down screen light,DECREASE_BRIGHTNESS
+reduce display light,DECREASE_BRIGHTNESS
+turn down the volume,DECREASE_VOLUME
+decrease volume,DECREASE_VOLUME
+volume down,DECREASE_VOLUME
+lower the volume,DECREASE_VOLUME
+make it quieter,DECREASE_VOLUME
+turn the sound down,DECREASE_VOLUME
+decrease system volume,DECREASE_VOLUME
+make audio softer,DECREASE_VOLUME
+volume lower,DECREASE_VOLUME
+turn sound lower,DECREASE_VOLUME
+reduce the volume,DECREASE_VOLUME
+lower audio level,DECREASE_VOLUME
+decrease speaker volume,DECREASE_VOLUME
+make the speakers quieter,DECREASE_VOLUME
+turn volume down please,DECREASE_VOLUME
+drop the volume,DECREASE_VOLUME
+can you lower the sound,DECREASE_VOLUME
+audio level down,DECREASE_VOLUME
+turn audio down,DECREASE_VOLUME
+lower speaker sound,DECREASE_VOLUME
+quieter please,DECREASE_VOLUME
+reduce audio volume,DECREASE_VOLUME
+turn volume softer,DECREASE_VOLUME
+turn down speaker level,DECREASE_VOLUME
+reduce the sound,DECREASE_VOLUME
+reduce the sound a bit,DECREASE_VOLUME
+turn down the sound,DECREASE_VOLUME
+goodbye,FAREWELL
+bye,FAREWELL
+bye nexa,FAREWELL
+goodbye nexa,FAREWELL
+see you,FAREWELL
+see you later,FAREWELL
+talk to you later,FAREWELL
+i'm leaving,FAREWELL
+i have to go now,FAREWELL
+that's all for now,FAREWELL
+that's all,FAREWELL
+that is all,FAREWELL
+we are done,FAREWELL
+we're done,FAREWELL
+good night,FAREWELL
+good night nexa,FAREWELL
+catch you later,FAREWELL
+bye bye,FAREWELL
+farewell,FAREWELL
+have a good one,FAREWELL
+see you soon,FAREWELL
+talk to you soon,FAREWELL
+exit assistant,FAREWELL
+that will be all,FAREWELL
+that's everything for today,FAREWELL
+signing off,FAREWELL
+talk later,FAREWELL
+i'm heading out,FAREWELL
+i gotta go,FAREWELL
+see ya,FAREWELL
+bye for now,FAREWELL
+have a great day,FAREWELL
+catch ya later,FAREWELL
+i am done for today,FAREWELL
+that's all thank you,FAREWELL
+okay bye,FAREWELL
+alright see you later,FAREWELL
+goodbye for now,FAREWELL
+have a good evening,FAREWELL
+peace out,FAREWELL
+peace out nexa,FAREWELL
+catch you on the flip side,FAREWELL
+adios,FAREWELL
+find my resume,FIND_FILE
+search for budget spreadsheet,FIND_FILE
+locate project report on disk,FIND_FILE
+where is presentation.pptx,FIND_FILE
+find file report.pdf,FIND_FILE
+search disk for thesis document,FIND_FILE
+locate my tax documents,FIND_FILE
+find file named invoice.pdf,FIND_FILE
+where did i save my cover letter,FIND_FILE
+search for files ending in .pdf,FIND_FILE
+find all python scripts in projects,FIND_FILE
+locate spreadsheet sales_2026.xlsx,FIND_FILE
+find the document notes.txt,FIND_FILE
+search for contract agreement on my pc,FIND_FILE
+where is my resume file located,FIND_FILE
+find file with name roadmap.pptx,FIND_FILE
+locate the pdf file meeting_agenda.pdf,FIND_FILE
+search for summary document,FIND_FILE
+find my financial report,FIND_FILE
+look for file specs.md on my drive,FIND_FILE
+search for downloaded statement.pdf,FIND_FILE
+find where proposal.docx is saved,FIND_FILE
+locate file checklist.txt,FIND_FILE
+search my drive for python files,FIND_FILE
+find document containing keywords budget,FIND_FILE
+where is my portfolio file,FIND_FILE
+find spreadsheet expenses.csv,FIND_FILE
+locate user manual on my computer,FIND_FILE
+search for file named design_mockup.png,FIND_FILE
+find the archive backup.zip,FIND_FILE
+search computer for agreement document,FIND_FILE
+find my certificates on this pc,FIND_FILE
+search for presentation slides,FIND_FILE
+locate document project_pitch.pdf,FIND_FILE
+find all markdown files in my documents,FIND_FILE
+forget that i live in seattle,FORGET_MEMORY
+forget what you remember about tea,FORGET_MEMORY
+delete memory about coffee,FORGET_MEMORY
+remove memory about dark mode,FORGET_MEMORY
+forget that my favorite color is blue,FORGET_MEMORY
+please delete the memory about my car,FORGET_MEMORY
+remove that fact from your memory,FORGET_MEMORY
+forget what i told you about peanuts,FORGET_MEMORY
+delete the memory regarding my old address,FORGET_MEMORY
+wipe memory about my previous job,FORGET_MEMORY
+forget my vacation plans,FORGET_MEMORY
+remove memory of my flight time,FORGET_MEMORY
+erase what you remember about my budget,FORGET_MEMORY
+please forget that fact,FORGET_MEMORY
+delete memory about max,FORGET_MEMORY
+forget what i said yesterday,FORGET_MEMORY
+remove all memories about smoking,FORGET_MEMORY
+clear memory about my old phone number,FORGET_MEMORY
+forget that i work remotely,FORGET_MEMORY
+delete stored memory about my meeting,FORGET_MEMORY
+forget that preference,FORGET_MEMORY
+erase memory of my credit card,FORGET_MEMORY
+remove that memory entry,FORGET_MEMORY
+please forget that i like soda,FORGET_MEMORY
+delete this specific memory,FORGET_MEMORY
+who are you,GENERAL_CONVERSATION
+what are you,GENERAL_CONVERSATION
+what is your name,GENERAL_CONVERSATION
+tell me about yourself,GENERAL_CONVERSATION
+what can you do,GENERAL_CONVERSATION
+what are your capabilities,GENERAL_CONVERSATION
+what can you help me with,GENERAL_CONVERSATION
+how can you help me,GENERAL_CONVERSATION
+how are you,GENERAL_CONVERSATION
+how are you doing,GENERAL_CONVERSATION
+are you an ai,GENERAL_CONVERSATION
+who made you,GENERAL_CONVERSATION
+who created you,GENERAL_CONVERSATION
+what is nexa,GENERAL_CONVERSATION
+tell me what you can do,GENERAL_CONVERSATION
+what features do you have,GENERAL_CONVERSATION
+help me,GENERAL_CONVERSATION
+what commands can i use,GENERAL_CONVERSATION
+show me what you can do,GENERAL_CONVERSATION
+what are your commands,GENERAL_CONVERSATION
+give me some help,GENERAL_CONVERSATION
+what do you do,GENERAL_CONVERSATION
+introduce yourself,GENERAL_CONVERSATION
+what is your purpose,GENERAL_CONVERSATION
+are you a voice assistant,GENERAL_CONVERSATION
+what can i ask you,GENERAL_CONVERSATION
+how do you work,GENERAL_CONVERSATION
+how does this assistant work,GENERAL_CONVERSATION
+tell me about nexa,GENERAL_CONVERSATION
+what can i do here,GENERAL_CONVERSATION
+give me a tour,GENERAL_CONVERSATION
+guide me,GENERAL_CONVERSATION
+list your capabilities,GENERAL_CONVERSATION
+explain your features,GENERAL_CONVERSATION
+okay,GENERAL_CONVERSATION
+never mind,GENERAL_CONVERSATION
+what is the date,GET_DATE
+what is today's date,GET_DATE
+what day is today,GET_DATE
+tell me the date,GET_DATE
+what is the date today,GET_DATE
+what day of the week is it,GET_DATE
+what month is it,GET_DATE
+what year is this,GET_DATE
+what is current date,GET_DATE
+can you tell me today's date,GET_DATE
+what date is it today,GET_DATE
+tell me what day it is,GET_DATE
+what's today's date,GET_DATE
+give me the date today,GET_DATE
+what day is it right now,GET_DATE
+check today's date,GET_DATE
+which day of the month is today,GET_DATE
+what is today's calendar date,GET_DATE
+today's date please,GET_DATE
+tell me the calendar date,GET_DATE
+do you know today's date,GET_DATE
+what is the current calendar day,GET_DATE
+what day is today's date,GET_DATE
+check the calendar date,GET_DATE
+what day are we on today,GET_DATE
+tell me what month and day it is,GET_DATE
+what is the day today,GET_DATE
+what day of the month are we on,GET_DATE
+please give me today's date,GET_DATE
+current date and day,GET_DATE
+what time is it,GET_TIME
+what time is it now,GET_TIME
+tell me the current time,GET_TIME
+what is the time right now,GET_TIME
+do you have the time,GET_TIME
+check current time,GET_TIME
+what's the time,GET_TIME
+can you tell me what time it is,GET_TIME
+what time is it currently,GET_TIME
+give me the current time,GET_TIME
+please tell me the time,GET_TIME
+what is the exact time,GET_TIME
+current time please,GET_TIME
+what hour is it,GET_TIME
+what time does the clock say,GET_TIME
+check the clock,GET_TIME
+what is local time,GET_TIME
+tell me time in ist,GET_TIME
+what is system time,GET_TIME
+can you check the time for me,GET_TIME
+what's the clock time,GET_TIME
+how late is it,GET_TIME
+what time have we got,GET_TIME
+time right now,GET_TIME
+what time is it on my pc,GET_TIME
+tell me the clock time,GET_TIME
+do you know what time it is,GET_TIME
+current local time,GET_TIME
+what time is it today,GET_TIME
+hello,GREETING
+hi,GREETING
+hey,GREETING
+hello nexa,GREETING
+hi nexa,GREETING
+hey nexa,GREETING
+good morning,GREETING
+good afternoon,GREETING
+good evening,GREETING
+greetings,GREETING
+hi there,GREETING
+hello there,GREETING
+hey there assistant,GREETING
+howdy,GREETING
+morning nexa,GREETING
+afternoon assistant,GREETING
+evening nexa,GREETING
+wake up nexa,GREETING
+hey assistant,GREETING
+hello assistant,GREETING
+yo nexa,GREETING
+greetings assistant,GREETING
+howdy nexa,GREETING
+hi assistant,GREETING
+hello computer,GREETING
+good day,GREETING
+hey buddy,GREETING
+hiya,GREETING
+good morning assistant,GREETING
+good evening assistant,GREETING
+hi there nexa,GREETING
+hello there nexa,GREETING
+nice to see you,GREETING
+glad to see you,GREETING
+welcome back nexa,GREETING
+increase brightness,INCREASE_BRIGHTNESS
+brighten screen,INCREASE_BRIGHTNESS
+raise brightness,INCREASE_BRIGHTNESS
+screen brighter,INCREASE_BRIGHTNESS
+make display brighter,INCREASE_BRIGHTNESS
+turn up brightness,INCREASE_BRIGHTNESS
+boost screen brightness,INCREASE_BRIGHTNESS
+increase display brightness,INCREASE_BRIGHTNESS
+make screen brighter,INCREASE_BRIGHTNESS
+brightness up,INCREASE_BRIGHTNESS
+brighten display,INCREASE_BRIGHTNESS
+raise screen brightness,INCREASE_BRIGHTNESS
+turn brightness up,INCREASE_BRIGHTNESS
+enhance brightness,INCREASE_BRIGHTNESS
+step up brightness,INCREASE_BRIGHTNESS
+make display lighter,INCREASE_BRIGHTNESS
+brighten monitor,INCREASE_BRIGHTNESS
+increase monitor brightness,INCREASE_BRIGHTNESS
+turn up monitor brightness,INCREASE_BRIGHTNESS
+lighten screen,INCREASE_BRIGHTNESS
+make monitor brighter,INCREASE_BRIGHTNESS
+bump up screen brightness,INCREASE_BRIGHTNESS
+higher brightness,INCREASE_BRIGHTNESS
+screen brightness up,INCREASE_BRIGHTNESS
+turn up the volume,INCREASE_VOLUME
+increase volume,INCREASE_VOLUME
+volume up,INCREASE_VOLUME
+raise the volume,INCREASE_VOLUME
+make it louder,INCREASE_VOLUME
+boost the volume,INCREASE_VOLUME
+turn the sound up,INCREASE_VOLUME
+increase system volume,INCREASE_VOLUME
+make audio louder,INCREASE_VOLUME
+volume higher,INCREASE_VOLUME
+turn sound higher,INCREASE_VOLUME
+crank up the volume,INCREASE_VOLUME
+raise audio level,INCREASE_VOLUME
+increase speaker volume,INCREASE_VOLUME
+make the speakers louder,INCREASE_VOLUME
+turn volume up please,INCREASE_VOLUME
+bump up the volume,INCREASE_VOLUME
+can you increase the sound,INCREASE_VOLUME
+audio level up,INCREASE_VOLUME
+turn audio up,INCREASE_VOLUME
+raise speaker sound,INCREASE_VOLUME
+louder please,INCREASE_VOLUME
+step up the volume,INCREASE_VOLUME
+turn volume higher,INCREASE_VOLUME
+what apps are open,INSPECT_APPLICATIONS
+what applications are running,INSPECT_APPLICATIONS
+which apps are currently running,INSPECT_APPLICATIONS
+list open apps,INSPECT_APPLICATIONS
+list running applications,INSPECT_APPLICATIONS
+which app is using the most memory,INSPECT_APPLICATIONS
+what application is using the most ram,INSPECT_APPLICATIONS
+which process has highest memory,INSPECT_APPLICATIONS
+how many chrome processes are running,INSPECT_APPLICATIONS
+is chrome running,INSPECT_APPLICATIONS
+is notepad open right now,INSPECT_APPLICATIONS
+is edge active,INSPECT_APPLICATIONS
+how many processes are open,INSPECT_APPLICATIONS
+check running applications,INSPECT_APPLICATIONS
+see what programs are open,INSPECT_APPLICATIONS
+list active background processes,INSPECT_APPLICATIONS
+is visual studio code running,INSPECT_APPLICATIONS
+what application is consuming top memory,INSPECT_APPLICATIONS
+how many instances of edge are running,INSPECT_APPLICATIONS
+check if spotify is open,INSPECT_APPLICATIONS
+what apps are active on my computer,INSPECT_APPLICATIONS
+list open windows and apps,INSPECT_APPLICATIONS
+which application is taking up the most memory,INSPECT_APPLICATIONS
+is terminal running,INSPECT_APPLICATIONS
+show me running programs,INSPECT_APPLICATIONS
+are there any chrome processes active,INSPECT_APPLICATIONS
+how many apps are currently open,INSPECT_APPLICATIONS
+check if calculator is running,INSPECT_APPLICATIONS
+list all active software,INSPECT_APPLICATIONS
+what is using the most ram right now,INSPECT_APPLICATIONS
+mute mic,MUTE_MICROPHONE
+mute microphone,MUTE_MICROPHONE
+mute my mic,MUTE_MICROPHONE
+mute my microphone,MUTE_MICROPHONE
+turn off mic,MUTE_MICROPHONE
+disable microphone,MUTE_MICROPHONE
+turn off microphone input,MUTE_MICROPHONE
+silence my mic,MUTE_MICROPHONE
+mute mic input,MUTE_MICROPHONE
+turn off my mic,MUTE_MICROPHONE
+silence the microphone,MUTE_MICROPHONE
+disable mic input,MUTE_MICROPHONE
+mute voice input,MUTE_MICROPHONE
+mute recording device,MUTE_MICROPHONE
+shut off microphone,MUTE_MICROPHONE
+put mic on mute,MUTE_MICROPHONE
+cut off microphone,MUTE_MICROPHONE
+mute audio input,MUTE_MICROPHONE
+silence microphone input,MUTE_MICROPHONE
+turn off mic recording,MUTE_MICROPHONE
+please mute the mic,MUTE_MICROPHONE
+mute my computer microphone,MUTE_MICROPHONE
+disable voice mic,MUTE_MICROPHONE
+mute mic now,MUTE_MICROPHONE
+mute audio,MUTE_VOLUME
+mute the volume,MUTE_VOLUME
+mute sound,MUTE_VOLUME
+mute system volume,MUTE_VOLUME
+mute speakers,MUTE_VOLUME
+silence audio,MUTE_VOLUME
+mute computer,MUTE_VOLUME
+mute laptop,MUTE_VOLUME
+turn off audio,MUTE_VOLUME
+silence system sound,MUTE_VOLUME
+kill the sound,MUTE_VOLUME
+shut off the volume,MUTE_VOLUME
+silence speakers,MUTE_VOLUME
+put sound on mute,MUTE_VOLUME
+mute the sound please,MUTE_VOLUME
+mute pc sound,MUTE_VOLUME
+silence volume,MUTE_VOLUME
+mute my computer,MUTE_VOLUME
+please mute the audio,MUTE_VOLUME
+mute device volume,MUTE_VOLUME
+silence my speakers,MUTE_VOLUME
+turn off system sound,MUTE_VOLUME
+set volume to mute,MUTE_VOLUME
+mute output audio,MUTE_VOLUME
+quiet the speakers completely,MUTE_VOLUME
+open google chrome,OPEN_APPLICATION
+launch visual studio code,OPEN_APPLICATION
+open vs code,OPEN_APPLICATION
+start notepad,OPEN_APPLICATION
+run spotify,OPEN_APPLICATION
+open calculator,OPEN_APPLICATION
+launch terminal,OPEN_APPLICATION
+open edge browser,OPEN_APPLICATION
+open microsoft edge,OPEN_APPLICATION
+start paint,OPEN_APPLICATION
+launch calculator app,OPEN_APPLICATION
+open command prompt,OPEN_APPLICATION
+run notepad application,OPEN_APPLICATION
+start chrome browser,OPEN_APPLICATION
+open spotify app,OPEN_APPLICATION
+launch powershell,OPEN_APPLICATION
+open windows terminal,OPEN_APPLICATION
+start visual studio code,OPEN_APPLICATION
+run calc,OPEN_APPLICATION
+open notepad editor,OPEN_APPLICATION
+launch spotify player,OPEN_APPLICATION
+open my browser,OPEN_APPLICATION
+start edge,OPEN_APPLICATION
+open code editor,OPEN_APPLICATION
+launch text editor,OPEN_APPLICATION
+start windows terminal,OPEN_APPLICATION
+open paint program,OPEN_APPLICATION
+run cmd,OPEN_APPLICATION
+launch terminal window,OPEN_APPLICATION
+open google chrome application,OPEN_APPLICATION
+start mspaint,OPEN_APPLICATION
+launch visual studio code editor,OPEN_APPLICATION
+open music player spotify,OPEN_APPLICATION
+run google chrome browser,OPEN_APPLICATION
+open bluetooth settings,OPEN_BLUETOOTH_SETTINGS
+show bluetooth settings,OPEN_BLUETOOTH_SETTINGS
+show bluetooth devices pane,OPEN_BLUETOOTH_SETTINGS
+pair bluetooth settings,OPEN_BLUETOOTH_SETTINGS
+open bluetooth configuration,OPEN_BLUETOOTH_SETTINGS
+view bluetooth devices,OPEN_BLUETOOTH_SETTINGS
+manage bluetooth connections,OPEN_BLUETOOTH_SETTINGS
+open bluetooth preferences,OPEN_BLUETOOTH_SETTINGS
+launch bluetooth settings,OPEN_BLUETOOTH_SETTINGS
+open bluetooth options,OPEN_BLUETOOTH_SETTINGS
+access bluetooth device manager,OPEN_BLUETOOTH_SETTINGS
+pair new bluetooth device,OPEN_BLUETOOTH_SETTINGS
+configure bluetooth settings,OPEN_BLUETOOTH_SETTINGS
+view bluetooth properties,OPEN_BLUETOOTH_SETTINGS
+open bluetooth control panel,OPEN_BLUETOOTH_SETTINGS
+show paired bluetooth devices,OPEN_BLUETOOTH_SETTINGS
+manage bluetooth hardware,OPEN_BLUETOOTH_SETTINGS
+open bluetooth connection pane,OPEN_BLUETOOTH_SETTINGS
+check bluetooth devices settings,OPEN_BLUETOOTH_SETTINGS
+open wireless device settings,OPEN_BLUETOOTH_SETTINGS
+open bluetooth pairing page,OPEN_BLUETOOTH_SETTINGS
+access bluetooth options,OPEN_BLUETOOTH_SETTINGS
+show bluetooth setup,OPEN_BLUETOOTH_SETTINGS
+open device bluetooth manager,OPEN_BLUETOOTH_SETTINGS
+open display settings,OPEN_DISPLAY_SETTINGS
+screen resolution settings,OPEN_DISPLAY_SETTINGS
+display properties,OPEN_DISPLAY_SETTINGS
+open monitor settings,OPEN_DISPLAY_SETTINGS
+view display options,OPEN_DISPLAY_SETTINGS
+open display configuration,OPEN_DISPLAY_SETTINGS
+change screen resolution settings,OPEN_DISPLAY_SETTINGS
+open screen settings,OPEN_DISPLAY_SETTINGS
+show display preferences,OPEN_DISPLAY_SETTINGS
+manage monitor settings,OPEN_DISPLAY_SETTINGS
+open graphics display settings,OPEN_DISPLAY_SETTINGS
+access display properties,OPEN_DISPLAY_SETTINGS
+configure multiple monitors,OPEN_DISPLAY_SETTINGS
+open screen configuration,OPEN_DISPLAY_SETTINGS
+launch display settings,OPEN_DISPLAY_SETTINGS
+adjust screen resolution pane,OPEN_DISPLAY_SETTINGS
+view monitor options,OPEN_DISPLAY_SETTINGS
+open display scaling settings,OPEN_DISPLAY_SETTINGS
+check display configuration,OPEN_DISPLAY_SETTINGS
+open monitor resolution,OPEN_DISPLAY_SETTINGS
+show screen properties,OPEN_DISPLAY_SETTINGS
+open second monitor settings,OPEN_DISPLAY_SETTINGS
+open display manager,OPEN_DISPLAY_SETTINGS
+configure display panel,OPEN_DISPLAY_SETTINGS
+access screen options,OPEN_DISPLAY_SETTINGS
+open my resume,OPEN_FILE
+open document resume.pdf,OPEN_FILE
+view the project report,OPEN_FILE
+open my cv file,OPEN_FILE
+open the report document,OPEN_FILE
+launch notes.txt,OPEN_FILE
+open my presentation slides,OPEN_FILE
+view file budget.xlsx,OPEN_FILE
+open the resume file,OPEN_FILE
+please open my resume document,OPEN_FILE
+open my contract pdf,OPEN_FILE
+open document thesis.docx,OPEN_FILE
+read the quarterly report file,OPEN_FILE
+open my financial statement,OPEN_FILE
+open the sales report spreadsheet,OPEN_FILE
+view document invoice.pdf,OPEN_FILE
+open the project documentation,OPEN_FILE
+please open file summary.txt,OPEN_FILE
+open my cover letter,OPEN_FILE
+view the spreadsheet data.csv,OPEN_FILE
+open document meeting_notes.md,OPEN_FILE
+open my research paper,OPEN_FILE
+launch file proposal.pdf,OPEN_FILE
+open my tax return document,OPEN_FILE
+view the file checklist.txt,OPEN_FILE
+open document roadmap.pptx,OPEN_FILE
+please open my portfolio pdf,OPEN_FILE
+open file itinerary.docx,OPEN_FILE
+open the user manual document,OPEN_FILE
+view my payslip pdf,OPEN_FILE
+open document specs.md,OPEN_FILE
+open my homework assignment,OPEN_FILE
+open the syllabus document,OPEN_FILE
+open file changelog.txt,OPEN_FILE
+open document agreement.pdf,OPEN_FILE
+open downloads folder,OPEN_FOLDER
+open documents directory,OPEN_FOLDER
+open my pictures folder,OPEN_FOLDER
+show desktop folder,OPEN_FOLDER
+open videos folder,OPEN_FOLDER
+open my music directory,OPEN_FOLDER
+open folder projects,OPEN_FOLDER
+browse my downloads,OPEN_FOLDER
+open the documents folder,OPEN_FOLDER
+open local drive c,OPEN_FOLDER
+open root directory,OPEN_FOLDER
+show me my pictures directory,OPEN_FOLDER
+open folder workspace,OPEN_FOLDER
+open code repository directory,OPEN_FOLDER
+open screenshots folder,OPEN_FOLDER
+browse my documents folder,OPEN_FOLDER
+open my desktop folder,OPEN_FOLDER
+open the camera roll folder,OPEN_FOLDER
+open folder backups,OPEN_FOLDER
+view downloads directory,OPEN_FOLDER
+open public documents folder,OPEN_FOLDER
+open folder temp,OPEN_FOLDER
+open user profile folder,OPEN_FOLDER
+show folder nexa,OPEN_FOLDER
+open directory dev,OPEN_FOLDER
+browse desktop files folder,OPEN_FOLDER
+open personal documents directory,OPEN_FOLDER
+open my work folder,OPEN_FOLDER
+open folder datasets,OPEN_FOLDER
+navigate to downloads folder,OPEN_FOLDER
+open network settings,OPEN_NETWORK_SETTINGS
+ethernet settings,OPEN_NETWORK_SETTINGS
+network and internet settings,OPEN_NETWORK_SETTINGS
+open network configuration,OPEN_NETWORK_SETTINGS
+view network options,OPEN_NETWORK_SETTINGS
+open network connections,OPEN_NETWORK_SETTINGS
+show network status settings,OPEN_NETWORK_SETTINGS
+manage internet connections,OPEN_NETWORK_SETTINGS
+open network adapter settings,OPEN_NETWORK_SETTINGS
+launch network preferences,OPEN_NETWORK_SETTINGS
+access network and internet,OPEN_NETWORK_SETTINGS
+open network control panel,OPEN_NETWORK_SETTINGS
+show ethernet configuration,OPEN_NETWORK_SETTINGS
+configure network connection,OPEN_NETWORK_SETTINGS
+view network and internet settings,OPEN_NETWORK_SETTINGS
+open ip configuration settings,OPEN_NETWORK_SETTINGS
+open internet settings,OPEN_NETWORK_SETTINGS
+check network properties,OPEN_NETWORK_SETTINGS
+open network status panel,OPEN_NETWORK_SETTINGS
+manage network adapters,OPEN_NETWORK_SETTINGS
+open network sharing settings,OPEN_NETWORK_SETTINGS
+view ethernet options,OPEN_NETWORK_SETTINGS
+launch network configuration pane,OPEN_NETWORK_SETTINGS
+access internet options,OPEN_NETWORK_SETTINGS
+open network setup,OPEN_NETWORK_SETTINGS
+open sound settings,OPEN_SOUND_SETTINGS
+audio device properties,OPEN_SOUND_SETTINGS
+open volume mixer,OPEN_SOUND_SETTINGS
+open audio settings,OPEN_SOUND_SETTINGS
+view sound options,OPEN_SOUND_SETTINGS
+open speaker settings,OPEN_SOUND_SETTINGS
+manage audio devices,OPEN_SOUND_SETTINGS
+open microphone settings,OPEN_SOUND_SETTINGS
+launch sound configuration,OPEN_SOUND_SETTINGS
+show audio properties,OPEN_SOUND_SETTINGS
+access sound control panel,OPEN_SOUND_SETTINGS
+open sound preferences,OPEN_SOUND_SETTINGS
+configure audio output settings,OPEN_SOUND_SETTINGS
+view input and output sound devices,OPEN_SOUND_SETTINGS
+open sound device manager,OPEN_SOUND_SETTINGS
+open volume settings,OPEN_SOUND_SETTINGS
+check sound device options,OPEN_SOUND_SETTINGS
+open playback devices settings,OPEN_SOUND_SETTINGS
+open recording devices settings,OPEN_SOUND_SETTINGS
+launch volume mixer,OPEN_SOUND_SETTINGS
+open sound options,OPEN_SOUND_SETTINGS
+access audio configuration,OPEN_SOUND_SETTINGS
+open sound panel,OPEN_SOUND_SETTINGS
+manage sound hardware,OPEN_SOUND_SETTINGS
+open audio mixer,OPEN_SOUND_SETTINGS
+open wifi settings,OPEN_WIFI_SETTINGS
+show wifi settings,OPEN_WIFI_SETTINGS
+open network connections settings,OPEN_WIFI_SETTINGS
+manage wifi networks,OPEN_WIFI_SETTINGS
+open wireless settings,OPEN_WIFI_SETTINGS
+view wifi options,OPEN_WIFI_SETTINGS
+open wifi configuration,OPEN_WIFI_SETTINGS
+show wireless network settings,OPEN_WIFI_SETTINGS
+view available wifi networks,OPEN_WIFI_SETTINGS
+configure wifi settings,OPEN_WIFI_SETTINGS
+open wifi control panel,OPEN_WIFI_SETTINGS
+show wireless connection options,OPEN_WIFI_SETTINGS
+open wi fi preferences,OPEN_WIFI_SETTINGS
+access wifi settings,OPEN_WIFI_SETTINGS
+manage wireless connections,OPEN_WIFI_SETTINGS
+open wifi properties,OPEN_WIFI_SETTINGS
+show network wifi options,OPEN_WIFI_SETTINGS
+open internet connection settings,OPEN_WIFI_SETTINGS
+view wifi setup,OPEN_WIFI_SETTINGS
+launch wifi settings,OPEN_WIFI_SETTINGS
+open wireless preferences,OPEN_WIFI_SETTINGS
+configure wireless network,OPEN_WIFI_SETTINGS
+open wifi network manager,OPEN_WIFI_SETTINGS
+check wifi settings,OPEN_WIFI_SETTINGS
+open windows settings,OPEN_WINDOWS_SETTINGS
+launch settings app,OPEN_WINDOWS_SETTINGS
+open system settings,OPEN_WINDOWS_SETTINGS
+open settings,OPEN_WINDOWS_SETTINGS
+show windows settings,OPEN_WINDOWS_SETTINGS
+view system settings,OPEN_WINDOWS_SETTINGS
+launch windows configuration,OPEN_WINDOWS_SETTINGS
+open control panel settings,OPEN_WINDOWS_SETTINGS
+open computer settings,OPEN_WINDOWS_SETTINGS
+open pc settings,OPEN_WINDOWS_SETTINGS
+show me windows settings,OPEN_WINDOWS_SETTINGS
+launch configuration settings,OPEN_WINDOWS_SETTINGS
+open general settings,OPEN_WINDOWS_SETTINGS
+access windows settings,OPEN_WINDOWS_SETTINGS
+open settings window,OPEN_WINDOWS_SETTINGS
+open system preferences,OPEN_WINDOWS_SETTINGS
+bring up windows settings,OPEN_WINDOWS_SETTINGS
+open my pc settings,OPEN_WINDOWS_SETTINGS
+launch system configuration,OPEN_WINDOWS_SETTINGS
+show settings panel,OPEN_WINDOWS_SETTINGS
+open windows options,OPEN_WINDOWS_SETTINGS
+open configuration panel,OPEN_WINDOWS_SETTINGS
+access system settings,OPEN_WINDOWS_SETTINGS
+open preferences app,OPEN_WINDOWS_SETTINGS
+display windows settings,OPEN_WINDOWS_SETTINGS
+remember that i live in seattle,REMEMBER_FACT
+remember that my favorite color is blue,REMEMBER_FACT
+save this in memory: i work remotely,REMEMBER_FACT
+remember this: my dog's name is max,REMEMBER_FACT
+note that the project deadline is friday,REMEMBER_FACT
+remember that i prefer dark mode in all apps,REMEMBER_FACT
+please remember that i am allergic to peanuts,REMEMBER_FACT
+save to memory that my car is a tesla,REMEMBER_FACT
+remember that my wife's birthday is on june 15,REMEMBER_FACT
+remember that i like green tea without sugar,REMEMBER_FACT
+save this fact: i speak english and spanish,REMEMBER_FACT
+remember that my flight leaves at 7 am,REMEMBER_FACT
+please save to memory that i use vscode for coding,REMEMBER_FACT
+remember that i am a software engineer,REMEMBER_FACT
+note that my office address is 100 main street,REMEMBER_FACT
+remember this fact: my favorite food is sushi,REMEMBER_FACT
+please remember that i prefer morning meetings,REMEMBER_FACT
+save in memory that i have two cats,REMEMBER_FACT
+remember that my daughter plays soccer on saturdays,REMEMBER_FACT
+remember that i run five kilometers every morning,REMEMBER_FACT
+note that i work on the nexa project,REMEMBER_FACT
+save to memory: my primary email is work@example.com,REMEMBER_FACT
+remember that i graduated in 2022,REMEMBER_FACT
+please remember that my favorite author is asimov,REMEMBER_FACT
+remember that i prefer metric units,REMEMBER_FACT
+note that my blood type is o positive,REMEMBER_FACT
+remember this: i am vegetarian,REMEMBER_FACT
+save to memory that my budget is ten thousand dollars,REMEMBER_FACT
+remember that i enjoy reading sci-fi novels,REMEMBER_FACT
+please remember that i wear size 10 shoes,REMEMBER_FACT
+restart the computer,RESTART
+reboot my pc,RESTART
+restart windows,RESTART
+system reboot,RESTART
+reboot the system,RESTART
+please restart computer,RESTART
+restart pc,RESTART
+reboot computer,RESTART
+perform system restart,RESTART
+restart laptop,RESTART
+reboot laptop,RESTART
+restart my machine,RESTART
+reboot windows,RESTART
+restart operating system,RESTART
+reboot my computer,RESTART
+restart device,RESTART
+initiate system reboot,RESTART
+do a system restart,RESTART
+reboot the machine,RESTART
+restart windows pc,RESTART
+trigger system reboot,RESTART
+restart the machine now,RESTART
+reboot pc now,RESTART
+perform computer reboot,RESTART
+restart system immediately,RESTART
+share my screen,SCREEN_SHARE
+share screen,SCREEN_SHARE
+turn on screen sharing,SCREEN_SHARE
+start screen share,SCREEN_SHARE
+enable screen share,SCREEN_SHARE
+begin screen sharing,SCREEN_SHARE
+activate screen share,SCREEN_SHARE
+share the screen,SCREEN_SHARE
+start sharing my screen,SCREEN_SHARE
+toggle screen share,SCREEN_SHARE
+share my monitor,SCREEN_SHARE
+start streaming my screen,SCREEN_SHARE
+start desktop screen share,SCREEN_SHARE
+share display,SCREEN_SHARE
+activate screen broadcast,SCREEN_SHARE
+turn on display capture,SCREEN_SHARE
+share whole screen,SCREEN_SHARE
+begin desktop sharing,SCREEN_SHARE
+broadcast my display,SCREEN_SHARE
+show my screen,SCREEN_SHARE
+turn on desktop screen sharing,SCREEN_SHARE
+enable monitor sharing,SCREEN_SHARE
+start sharing desktop view,SCREEN_SHARE
+stream my desktop display,SCREEN_SHARE
+launch screen share preview,SCREEN_SHARE
+start sharing screen now,SCREEN_SHARE
+what do you remember about me,SEARCH_MEMORIES
+what did i tell you about my favorite color,SEARCH_MEMORIES
+search memory for seattle,SEARCH_MEMORIES
+what do you know about my preferences,SEARCH_MEMORIES
+check memory for my dog's name,SEARCH_MEMORIES
+recall what i said about the deadline,SEARCH_MEMORIES
+what is stored in your memory about my work,SEARCH_MEMORIES
+search my memories for birthday,SEARCH_MEMORIES
+what do you remember,SEARCH_MEMORIES
+do you remember where i live,SEARCH_MEMORIES
+check your memory for my car,SEARCH_MEMORIES
+tell me what you remember about my allergies,SEARCH_MEMORIES
+search memory for travel plans,SEARCH_MEMORIES
+what did i say my favorite food was,SEARCH_MEMORIES
+check memory for meeting preferences,SEARCH_MEMORIES
+recall my stored facts,SEARCH_MEMORIES
+what do you know about my family,SEARCH_MEMORIES
+search your memories for notes,SEARCH_MEMORIES
+what personal facts do you have saved,SEARCH_MEMORIES
+what do you remember about my hobbies,SEARCH_MEMORIES
+check memory for project details,SEARCH_MEMORIES
+retrieve my stored preferences,SEARCH_MEMORIES
+what did i tell you about my office,SEARCH_MEMORIES
+search memory for flight details,SEARCH_MEMORIES
+do you remember what i like to drink,SEARCH_MEMORIES
+search for python jobs,SEARCH_WEB
+search the web for python jobs,SEARCH_WEB
+search web for latest artificial intelligence news,SEARCH_WEB
+google quantum computing tutorials,SEARCH_WEB
+search the web for weather trends,SEARCH_WEB
+search for best laptops in 2026,SEARCH_WEB
+look up recipes for homemade pasta,SEARCH_WEB
+search online for machine learning courses,SEARCH_WEB
+search the internet for stock market updates,SEARCH_WEB
+google how to install docker on windows,SEARCH_WEB
+search the web for nearby restaurants,SEARCH_WEB
+look up latest space exploration missions,SEARCH_WEB
+search web for flights to new york,SEARCH_WEB
+google python asyncio best practices,SEARCH_WEB
+search for remote software engineering roles,SEARCH_WEB
+search the internet for electric vehicle comparisons,SEARCH_WEB
+look up population of tokyo,SEARCH_WEB
+google what is the capital of australia,SEARCH_WEB
+search for beginner chess openings,SEARCH_WEB
+search the web for upcoming tech conferences,SEARCH_WEB
+find online tutorials for rust programming,SEARCH_WEB
+search internet for tips on productivity,SEARCH_WEB
+look up news about mars rover,SEARCH_WEB
+search for open source ai models,SEARCH_WEB
+google latest news on renewable energy,SEARCH_WEB
+search the web for top tourist attractions in paris,SEARCH_WEB
+look up how does transformer neural network work,SEARCH_WEB
+search web for graphic design inspiration,SEARCH_WEB
+google comparison between python and c++,SEARCH_WEB
+search for healthy breakfast ideas,SEARCH_WEB
+search online for history of computing,SEARCH_WEB
+look up instructions for configuring git,SEARCH_WEB
+search web for latest cybersecurity advisories,SEARCH_WEB
+google best sci fi books of the decade,SEARCH_WEB
+search the web for deep learning research papers,SEARCH_WEB
+send an email,SEND_EMAIL
+send email,SEND_EMAIL
+email someone,SEND_EMAIL
+write an email,SEND_EMAIL
+compose an email,SEND_EMAIL
+shoot an email,SEND_EMAIL
+send an email to test@example.com,SEND_EMAIL
+email john at john@example.com,SEND_EMAIL
+send a mail to team@company.com,SEND_EMAIL
+send an email to test@example.com about meeting,SEND_EMAIL
+email manager@example.com with subject status update,SEND_EMAIL
+send an email to my colleague saying the report is ready,SEND_EMAIL
+compose an email to support@service.com with subject issue,SEND_EMAIL
+write an email to client@partner.com saying project is complete,SEND_EMAIL
+send email to boss@corp.com with subject weekly progress,SEND_EMAIL
+can you send an email to alex@example.com,SEND_EMAIL
+please write an email to team with subject release notes,SEND_EMAIL
+send an email to myself with subject notes,SEND_EMAIL
+draft and send an email to contact@domain.com,SEND_EMAIL
+send mail to user@test.com saying please find the attachment,SEND_EMAIL
+mail john regarding tomorrow's meeting,SEND_EMAIL
+send an email to sarah with subject design feedback,SEND_EMAIL
+please shoot an email to hr@company.com,SEND_EMAIL
+send an email to david saying i will be late,SEND_EMAIL
+compose a message and email it to operations@firm.com,SEND_EMAIL
+can you email team@example.com with subject sprint review,SEND_EMAIL
+send an email saying the deployment succeeded,SEND_EMAIL
+write a mail to accounting@company.com,SEND_EMAIL
+send an email to dev-team@startup.io with subject bug report,SEND_EMAIL
+email my supervisor saying i finished the tasks,SEND_EMAIL
+send an email to customer@store.com with subject order update,SEND_EMAIL
+please send an email to lead@example.com,SEND_EMAIL
+email alice with subject quick question,SEND_EMAIL
+send an email to team saying meeting starts in 10 minutes,SEND_EMAIL
+shoot an email to bob@example.com saying thanks,SEND_EMAIL
+set brightness to 50 percent,SET_BRIGHTNESS
+set brightness to 80%,SET_BRIGHTNESS
+change brightness to 70 percent,SET_BRIGHTNESS
+adjust brightness to 60 percent,SET_BRIGHTNESS
+set screen brightness to 100 percent,SET_BRIGHTNESS
+change display brightness to 40%,SET_BRIGHTNESS
+adjust screen brightness to 50,SET_BRIGHTNESS
+set brightness to 30 percent,SET_BRIGHTNESS
+change monitor brightness to 90%,SET_BRIGHTNESS
+set display brightness to 75 percent,SET_BRIGHTNESS
+set brightness to half,SET_BRIGHTNESS
+set brightness to maximum,SET_BRIGHTNESS
+set brightness to minimum,SET_BRIGHTNESS
+configure brightness to 50%,SET_BRIGHTNESS
+put brightness at 80 percent,SET_BRIGHTNESS
+adjust brightness to 100%,SET_BRIGHTNESS
+change brightness level to 70,SET_BRIGHTNESS
+set brightness 50,SET_BRIGHTNESS
+set brightness 80,SET_BRIGHTNESS
+turn brightness to 60 percent,SET_BRIGHTNESS
+adjust monitor brightness to 50%,SET_BRIGHTNESS
+set screen to 70 percent brightness,SET_BRIGHTNESS
+change screen brightness to 30%,SET_BRIGHTNESS
+set brightness to full,SET_BRIGHTNESS
+set display level to 80 percent,SET_BRIGHTNESS
+remind me tomorrow,SET_REMINDER
+remind me to call mom in 10 minutes,SET_REMINDER
+set a reminder to call mom in 10 minutes,SET_REMINDER
+please remind me to drink water in 30 minutes,SET_REMINDER
+remind me to take my medicine at 8 pm,SET_REMINDER
+set a timer for 15 minutes,SET_REMINDER
+set a reminder for my meeting at 2 pm,SET_REMINDER
+can you remind me to buy groceries in 1 hour,SET_REMINDER
+remind me in 5 minutes to check the oven,SET_REMINDER
+create a reminder for team standup at 10 am,SET_REMINDER
+please set a reminder to pay the electric bill tomorrow,SET_REMINDER
+remind me to submit the quarterly report by 5 pm,SET_REMINDER
+set a reminder for doctor appointment at 4 pm,SET_REMINDER
+remind me to call john at 3 o'clock,SET_REMINDER
+set an alarm reminder for 7 am tomorrow,SET_REMINDER
+remind me in 20 minutes to stretch,SET_REMINDER
+set a reminder to water the plants this evening,SET_REMINDER
+create a reminder to reply to emails at noon,SET_REMINDER
+remind me to pick up the package in 2 hours,SET_REMINDER
+remind me about my dentist appointment at 11 am,SET_REMINDER
+can you set a reminder to take a break in 45 minutes,SET_REMINDER
+remind me to feed the cat in 15 mins,SET_REMINDER
+set reminder for conference call at 6 pm,SET_REMINDER
+please remind me to review the pull request in 30 mins,SET_REMINDER
+remind me tomorrow morning to check logs,SET_REMINDER
+remind me to follow up with client tomorrow at 10 am,SET_REMINDER
+set a timer for 5 minutes,SET_REMINDER
+set timer for 10 minutes,SET_REMINDER
+remind me in one hour to save my work,SET_REMINDER
+set a reminder to turn off the lights at 11 pm,SET_REMINDER
+remind me to call dad tonight,SET_REMINDER
+create a reminder for gym workout at 6 am,SET_REMINDER
+remind me to take out the trash in 10 minutes,SET_REMINDER
+please remind me to check the deployment in 2 hours,SET_REMINDER
+set a reminder to walk the dog in 30 minutes,SET_REMINDER
+show my reminders,SHOW_REMINDERS
+list all reminders,SHOW_REMINDERS
+what reminders do i have,SHOW_REMINDERS
+view my reminders,SHOW_REMINDERS
+check my reminders,SHOW_REMINDERS
+do i have any reminders,SHOW_REMINDERS
+show active reminders,SHOW_REMINDERS
+display my reminders,SHOW_REMINDERS
+list pending reminders,SHOW_REMINDERS
+what are my reminders for today,SHOW_REMINDERS
+check pending reminders,SHOW_REMINDERS
+show me my scheduled reminders,SHOW_REMINDERS
+what reminders are set,SHOW_REMINDERS
+view scheduled reminders,SHOW_REMINDERS
+list all active timers,SHOW_REMINDERS
+show active timers,SHOW_REMINDERS
+check my timers,SHOW_REMINDERS
+read my reminders,SHOW_REMINDERS
+what is on my reminder list,SHOW_REMINDERS
+do i have any upcoming reminders,SHOW_REMINDERS
+tell me my reminders,SHOW_REMINDERS
+check scheduled alarms and reminders,SHOW_REMINDERS
+pull up my reminders,SHOW_REMINDERS
+show reminders list,SHOW_REMINDERS
+any reminders pending,SHOW_REMINDERS
+shut down the computer,SHUTDOWN
+power off my pc,SHUTDOWN
+turn off the computer,SHUTDOWN
+shutdown windows,SHUTDOWN
+power down the system,SHUTDOWN
+please shut down computer,SHUTDOWN
+shutdown pc,SHUTDOWN
+perform system shutdown,SHUTDOWN
+shut down laptop,SHUTDOWN
+turn off laptop,SHUTDOWN
+turn off my machine,SHUTDOWN
+shutdown windows pc,SHUTDOWN
+power off operating system,SHUTDOWN
+shut down my computer,SHUTDOWN
+power down device,SHUTDOWN
+initiate system shutdown,SHUTDOWN
+do a system shutdown,SHUTDOWN
+shut off the machine,SHUTDOWN
+power off machine,SHUTDOWN
+turn off pc,SHUTDOWN
+shut down windows system,SHUTDOWN
+trigger system power off,SHUTDOWN
+turn off computer now,SHUTDOWN
+shut down system completely,SHUTDOWN
+what is my ram usage,SYSTEM_INFO
+how much memory is free,SYSTEM_INFO
+what is my cpu usage,SYSTEM_INFO
+check cpu utilization,SYSTEM_INFO
+what is my battery level,SYSTEM_INFO
+is my laptop charging,SYSTEM_INFO
+how much storage is left,SYSTEM_INFO
+how much free disk space on drive c,SYSTEM_INFO
+check my system status,SYSTEM_INFO
+how is my computer running,SYSTEM_INFO
+what wifi am i connected to,SYSTEM_INFO
+what is my ssid,SYSTEM_INFO
+what is my ip address,SYSTEM_INFO
+what is my ping,SYSTEM_INFO
+am i connected to the internet,SYSTEM_INFO
+is my connection stable,SYSTEM_INFO
+is my microphone working,SYSTEM_INFO
+is my mic available,SYSTEM_INFO
+is my camera available,SYSTEM_INFO
+what is the current volume level,SYSTEM_INFO
+check system health,SYSTEM_INFO
+tell me my hardware stats,SYSTEM_INFO
+how much storage space is remaining,SYSTEM_INFO
+check my processor temperature and load,SYSTEM_INFO
+what audio device is active,SYSTEM_INFO
+is my webcam functioning,SYSTEM_INFO
+check internet latency and ping,SYSTEM_INFO
+how much battery time is remaining,SYSTEM_INFO
+what is my system memory status,SYSTEM_INFO
+is my laptop running under heavy load,SYSTEM_INFO
+how much ram is being used right now,SYSTEM_INFO
+check computer resources,SYSTEM_INFO
+what are my network bandwidth stats,SYSTEM_INFO
+is my computer online,SYSTEM_INFO
+show me my system information,SYSTEM_INFO
+thank you,THANKS
+thanks,THANKS
+thanks nexa,THANKS
+thank you nexa,THANKS
+thank you very much,THANKS
+thanks a lot,THANKS
+thanks a bunch,THANKS
+appreciate it,THANKS
+much appreciated,THANKS
+thank you so much,THANKS
+thanks for your help,THANKS
+thanks for helping me,THANKS
+appreciate your help,THANKS
+great thanks,THANKS
+awesome thanks,THANKS
+perfect thank you,THANKS
+thank you assistant,THANKS
+many thanks,THANKS
+cheers,THANKS
+cheers nexa,THANKS
+that was helpful thanks,THANKS
+thanks for the info,THANKS
+thank you kindly,THANKS
+i appreciate that,THANKS
+big thanks,THANKS
+thank you for that,THANKS
+thanks buddy,THANKS
+you are the best thanks,THANKS
+grateful for your help,THANKS
+thanks a million,THANKS
+much obliged,THANKS
+thank you so much for the assistance,THANKS
+turn off bluetooth,TURN_OFF_BLUETOOTH
+disable bluetooth,TURN_OFF_BLUETOOTH
+switch off bluetooth,TURN_OFF_BLUETOOTH
+deactivate bluetooth,TURN_OFF_BLUETOOTH
+turn bluetooth off,TURN_OFF_BLUETOOTH
+stop bluetooth,TURN_OFF_BLUETOOTH
+disable bluetooth adapter,TURN_OFF_BLUETOOTH
+turn off wireless bluetooth,TURN_OFF_BLUETOOTH
+switch off bluetooth device,TURN_OFF_BLUETOOTH
+deactivate bluetooth connection,TURN_OFF_BLUETOOTH
+turn off computer bluetooth,TURN_OFF_BLUETOOTH
+disable laptop bluetooth,TURN_OFF_BLUETOOTH
+switch bluetooth off,TURN_OFF_BLUETOOTH
+stop bluetooth service,TURN_OFF_BLUETOOTH
+deactivate bluetooth radio,TURN_OFF_BLUETOOTH
+disable bluetooth networking,TURN_OFF_BLUETOOTH
+turn off bluetooth receiver,TURN_OFF_BLUETOOTH
+turn off my bluetooth,TURN_OFF_BLUETOOTH
+switch off bluetooth adapter,TURN_OFF_BLUETOOTH
+disconnect bluetooth,TURN_OFF_BLUETOOTH
+deactivate bluetooth adapter,TURN_OFF_BLUETOOTH
+turn bluetooth radio off,TURN_OFF_BLUETOOTH
+turn off wifi,TURN_OFF_WIFI
+disable wifi,TURN_OFF_WIFI
+switch off wifi,TURN_OFF_WIFI
+deactivate wifi,TURN_OFF_WIFI
+disconnect wifi,TURN_OFF_WIFI
+turn wifi off,TURN_OFF_WIFI
+stop wifi,TURN_OFF_WIFI
+disable wireless network,TURN_OFF_WIFI
+turn off wireless networking,TURN_OFF_WIFI
+switch off wireless connection,TURN_OFF_WIFI
+deactivate wireless adapter,TURN_OFF_WIFI
+turn off computer wifi,TURN_OFF_WIFI
+disable laptop wifi,TURN_OFF_WIFI
+turn off network adapter,TURN_OFF_WIFI
+disconnect from wifi,TURN_OFF_WIFI
+switch off the wifi,TURN_OFF_WIFI
+disable wifi connection,TURN_OFF_WIFI
+turn off my wifi,TURN_OFF_WIFI
+deactivate wi-fi adapter,TURN_OFF_WIFI
+switch wifi off,TURN_OFF_WIFI
+shut off wireless connection,TURN_OFF_WIFI
+disconnect from the wireless network,TURN_OFF_WIFI
+turn off the wireless network,TURN_OFF_WIFI
+turn on bluetooth,TURN_ON_BLUETOOTH
+enable bluetooth,TURN_ON_BLUETOOTH
+switch on bluetooth,TURN_ON_BLUETOOTH
+activate bluetooth,TURN_ON_BLUETOOTH
+turn bluetooth on,TURN_ON_BLUETOOTH
+start bluetooth,TURN_ON_BLUETOOTH
+enable bluetooth adapter,TURN_ON_BLUETOOTH
+turn on wireless bluetooth,TURN_ON_BLUETOOTH
+switch on bluetooth device,TURN_ON_BLUETOOTH
+activate bluetooth connection,TURN_ON_BLUETOOTH
+turn on computer bluetooth,TURN_ON_BLUETOOTH
+enable laptop bluetooth,TURN_ON_BLUETOOTH
+switch bluetooth on,TURN_ON_BLUETOOTH
+start bluetooth service,TURN_ON_BLUETOOTH
+activate bluetooth radio,TURN_ON_BLUETOOTH
+enable bluetooth networking,TURN_ON_BLUETOOTH
+turn on bluetooth receiver,TURN_ON_BLUETOOTH
+turn on my bluetooth,TURN_ON_BLUETOOTH
+switch on bluetooth adapter,TURN_ON_BLUETOOTH
+connect bluetooth,TURN_ON_BLUETOOTH
+activate bluetooth adapter,TURN_ON_BLUETOOTH
+turn bluetooth radio on,TURN_ON_BLUETOOTH
+turn on camera,TURN_ON_CAMERA
+open camera,TURN_ON_CAMERA
+start camera,TURN_ON_CAMERA
+enable camera,TURN_ON_CAMERA
+activate camera,TURN_ON_CAMERA
+launch camera,TURN_ON_CAMERA
+switch on camera,TURN_ON_CAMERA
+turn on the camera,TURN_ON_CAMERA
+open the camera,TURN_ON_CAMERA
+start the camera,TURN_ON_CAMERA
+enable the camera,TURN_ON_CAMERA
+activate webcam,TURN_ON_CAMERA
+open webcam,TURN_ON_CAMERA
+turn on webcam,TURN_ON_CAMERA
+start webcam,TURN_ON_CAMERA
+enable webcam,TURN_ON_CAMERA
+turn camera on,TURN_ON_CAMERA
+switch on webcam,TURN_ON_CAMERA
+launch webcam preview,TURN_ON_CAMERA
+start video camera,TURN_ON_CAMERA
+turn on video feed,TURN_ON_CAMERA
+start my camera,TURN_ON_CAMERA
+activate video capture,TURN_ON_CAMERA
+open camera viewport,TURN_ON_CAMERA
+show camera preview,TURN_ON_CAMERA
+enable my webcam,TURN_ON_CAMERA
+start computer camera,TURN_ON_CAMERA
+turn on laptop webcam,TURN_ON_CAMERA
+activate camera feed,TURN_ON_CAMERA
+start web camera,TURN_ON_CAMERA
+turn on wifi,TURN_ON_WIFI
+enable wifi,TURN_ON_WIFI
+switch on wifi,TURN_ON_WIFI
+activate wifi,TURN_ON_WIFI
+connect to wifi,TURN_ON_WIFI
+turn wifi on,TURN_ON_WIFI
+start wifi,TURN_ON_WIFI
+enable wireless network,TURN_ON_WIFI
+turn on wireless networking,TURN_ON_WIFI
+switch on wireless connection,TURN_ON_WIFI
+activate wireless adapter,TURN_ON_WIFI
+turn on computer wifi,TURN_ON_WIFI
+enable laptop wifi,TURN_ON_WIFI
+turn on network adapter,TURN_ON_WIFI
+reconnect wifi,TURN_ON_WIFI
+switch on the wifi,TURN_ON_WIFI
+enable wifi connection,TURN_ON_WIFI
+turn on my wifi,TURN_ON_WIFI
+activate wi-fi adapter,TURN_ON_WIFI
+switch wifi on,TURN_ON_WIFI
+start wireless connection,TURN_ON_WIFI
+unmute mic,UNMUTE_MICROPHONE
+unmute microphone,UNMUTE_MICROPHONE
+unmute my mic,UNMUTE_MICROPHONE
+unmute my microphone,UNMUTE_MICROPHONE
+turn on mic,UNMUTE_MICROPHONE
+enable microphone,UNMUTE_MICROPHONE
+turn on microphone input,UNMUTE_MICROPHONE
+restore my mic,UNMUTE_MICROPHONE
+unmute mic input,UNMUTE_MICROPHONE
+turn on my mic,UNMUTE_MICROPHONE
+enable mic input,UNMUTE_MICROPHONE
+restore the microphone,UNMUTE_MICROPHONE
+unmute voice input,UNMUTE_MICROPHONE
+activate recording device,UNMUTE_MICROPHONE
+turn microphone back on,UNMUTE_MICROPHONE
+take mic off mute,UNMUTE_MICROPHONE
+restore microphone input,UNMUTE_MICROPHONE
+unmute audio input,UNMUTE_MICROPHONE
+activate microphone input,UNMUTE_MICROPHONE
+turn on mic recording,UNMUTE_MICROPHONE
+please unmute the mic,UNMUTE_MICROPHONE
+unmute my computer microphone,UNMUTE_MICROPHONE
+enable voice mic,UNMUTE_MICROPHONE
+unmute mic now,UNMUTE_MICROPHONE
+unmute audio,UNMUTE_VOLUME
+unmute the volume,UNMUTE_VOLUME
+unmute sound,UNMUTE_VOLUME
+unmute system volume,UNMUTE_VOLUME
+unmute speakers,UNMUTE_VOLUME
+restore audio,UNMUTE_VOLUME
+unmute computer,UNMUTE_VOLUME
+unmute laptop,UNMUTE_VOLUME
+turn sound back on,UNMUTE_VOLUME
+unmute system sound,UNMUTE_VOLUME
+bring back the sound,UNMUTE_VOLUME
+restore system volume,UNMUTE_VOLUME
+take sound off mute,UNMUTE_VOLUME
+unmute the sound please,UNMUTE_VOLUME
+unmute pc sound,UNMUTE_VOLUME
+restore volume,UNMUTE_VOLUME
+unmute my computer,UNMUTE_VOLUME
+please unmute the audio,UNMUTE_VOLUME
+enable sound output,UNMUTE_VOLUME
+turn audio back on,UNMUTE_VOLUME
+un-mute the volume,UNMUTE_VOLUME
+switch sound back on,UNMUTE_VOLUME
+activate speaker audio,UNMUTE_VOLUME
+remove sound mute,UNMUTE_VOLUME
+unmute my speakers,UNMUTE_VOLUME
+what is the weather in delhi,WEATHER
+how is the weather in bengaluru,WEATHER
+weather for bengaluru,WEATHER
+check the weather in new york,WEATHER
+what's the weather like in london,WEATHER
+weather forecast for tokyo,WEATHER
+what is the temperature in paris today,WEATHER
+is it raining outside in seattle,WEATHER
+tell me the weather forecast for mumbai,WEATHER
+what is the current weather in san francisco,WEATHER
+how hot is it in dubai right now,WEATHER
+check weather forecast for chicago,WEATHER
+is it sunny in sydney today,WEATHER
+will it rain in boston tomorrow,WEATHER
+how cold is it in toronto,WEATHER
+what is the temperature outside,WEATHER
+check the weather forecast for tomorrow,WEATHER
+weather update for berlin,WEATHER
+what is the humidity in singapore,WEATHER
+tell me today's weather,WEATHER
+how is the weather today,WEATHER
+what's the forecast for this weekend,WEATHER
+current temperature in los angeles,WEATHER
+is there a storm coming in miami,WEATHER
+check current weather conditions,WEATHER
+give me the weather report,WEATHER
+what is the weather like right now,WEATHER
+forecast in kolkata,WEATHER
+temperature in hyderabad,WEATHER
+open file explorer,OPEN_APPLICATION
+launch file explorer,OPEN_APPLICATION
+start file explorer,OPEN_APPLICATION
+open explorer,OPEN_APPLICATION
+open windows file explorer,OPEN_APPLICATION
+open clock,OPEN_APPLICATION
+launch clock,OPEN_APPLICATION
+open alarms and clock,OPEN_APPLICATION
+start clock app,OPEN_APPLICATION
+open microsoft store,OPEN_APPLICATION
+open the microsoft store,OPEN_APPLICATION
+launch ms store,OPEN_APPLICATION
+open store app,OPEN_APPLICATION
+open obsidian,OPEN_APPLICATION
+launch obsidian,OPEN_APPLICATION
+start obsidian notes,OPEN_APPLICATION
+open obsidian app,OPEN_APPLICATION
+open copilot,OPEN_APPLICATION
+launch copilot,OPEN_APPLICATION
+open microsoft copilot,OPEN_APPLICATION
+start copilot,OPEN_APPLICATION
+open resume,OPEN_FILE
+open venkatesh resume,OPEN_FILE
+open my resume pdf,OPEN_FILE
+open that resume,OPEN_FILE
+open resume.pdf,OPEN_FILE
+open the resume,OPEN_FILE
+open the file called resume,OPEN_FILE
+open my cv,OPEN_FILE
+find my resume,OPEN_FILE
+look for my resume,OPEN_FILE
+open document resume,OPEN_FILE
+view my resume,OPEN_FILE
+read my resume,OPEN_FILE
+quit notepad,CLOSE_APPLICATION
+quit chrome,CLOSE_APPLICATION
+shut down spotify app,CLOSE_APPLICATION
+close active window,CLOSE_APPLICATION
+exit calculator,CLOSE_APPLICATION
+exit the current app,CLOSE_APPLICATION
+kill chrome process,CLOSE_APPLICATION
+nexa close notepad,CLOSE_APPLICATION
+have a wonderful day,FAREWELL
+signing off for today,FAREWELL
+quit assistant,FAREWELL
+see you tomorrow,FAREWELL
+gotta go now bye,FAREWELL
+nexa goodbye see you tomorrow,FAREWELL
+what month is this,GET_DATE
+tell me the current date,GET_DATE
+what is the current date,GET_DATE
+which day of the week is it,GET_DATE
+would you mind checking the date,GET_DATE
+what time do you have,GET_TIME
+unmute the mic input,UNMUTE_MICROPHONE
+mute the voice input,MUTE_MICROPHONE
+silence microphone,MUTE_MICROPHONE
+silence the speakers,MUTE_VOLUME
+nexa please mute the microphone,MUTE_MICROPHONE
+shut off bluetooth,TURN_OFF_BLUETOOTH
+shut off wifi,TURN_OFF_WIFI
+enable wireless adapter,TURN_ON_WIFI
+power down the laptop,SHUTDOWN
+power down the computer,SHUTDOWN
+restart my laptop,RESTART
+stop timer,CANCEL_REMINDER
+cancel the timer,CANCEL_REMINDER
+cancel timer,CANCEL_REMINDER
+delete the timer,CANCEL_REMINDER
+cancel my reminder,CANCEL_REMINDER
+delete my reminder,CANCEL_REMINDER
+dim my display please,DECREASE_BRIGHTNESS
+brighten the screen,INCREASE_BRIGHTNESS
+turn up the sound a bit,INCREASE_VOLUME
+turn down the sound a bit,DECREASE_VOLUME
+raise the volume a bit,INCREASE_VOLUME
+lower the volume a bit,DECREASE_VOLUME
+turn up volume a little,INCREASE_VOLUME
+turn down volume a little,DECREASE_VOLUME
+open sound properties,OPEN_SOUND_SETTINGS
+open audio device settings,OPEN_SOUND_SETTINGS
+what do you remember about the project,SEARCH_MEMORIES
+locate budget document,FIND_FILE
+search disk for resume,FIND_FILE
+open presentation slides,OPEN_FILE
+could you please open notepad,OPEN_APPLICATION
+what is the weather like in tokyo,WEATHER
+check forecast for london,WEATHER
+is chrome active,INSPECT_APPLICATIONS
+which applications are open,INSPECT_APPLICATIONS
+have a nice evening,FAREWELL
+have a great evening,FAREWELL
+have a wonderful evening,FAREWELL
+enable network adapter,TURN_ON_WIFI
+activate network adapter,TURN_ON_WIFI
+disable network adapter,TURN_OFF_WIFI
+deactivate network adapter,TURN_OFF_WIFI
+what year is it,GET_DATE
+what is the current year,GET_DATE
+current year,GET_DATE
+tell me the year,GET_DATE
+what year are we in,GET_DATE
+which year is this,GET_DATE

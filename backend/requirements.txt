@@ -1,0 +1,12 @@
+livekit-agents
+livekit-plugins-google
+livekit-plugins-noise-cancellation
+mem0ai
+python-dotenv
+aiohttp
+scikit-learn
+scipy
+psutil
+mcp
+PySide6
+

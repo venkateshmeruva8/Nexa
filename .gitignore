@@ -1,0 +1,88 @@
+# Environment variables & secrets
+.env
+*.env
+!.env.example
+
+# Credentials, Keys & Certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.pkcs12
+*.crt
+*.cer
+credentials.json
+client_secret*.json
+token.json
+service_account*.json
+
+# Databases & SQLite (User reminders & persistent local state)
+*.db
+*.sqlite
+*.sqlite3
+backend/data/*.db
+!backend/data/intent_dataset.csv
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Machine Learning model binaries & checkpoints
+*.pkl
+*.pickle
+*.safetensors
+*.onnx
+*.bin
+backend/models/*.pkl
+models/
+
+# Audio recordings & dumps (Whisper / TTS runtime)
+*.wav
+*.mp3
+*.ogg
+*.flac
+*.pcm
+
+# Unit test, coverage & linters
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Logs & runtime directories
+*.log
+logs/
+KMS/logs/
+scratch/
+.tempmediaStorage/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Frontend (for future UI)
+node_modules/
+.next/
