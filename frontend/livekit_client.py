@@ -280,10 +280,8 @@ class NexaLiveKitClient(QObject):
             self.errorOccurred.emit(err_msg)
             return
 
-        # Start audio player thread
-        if not self._player:
-            self._player = NexaAudioPlayer(sample_rate=48000, num_channels=1)
-            self._player.start()
+        # Audio playout is handled natively by rtc.PlatformAudio WebRTC ADM.
+        # NexaAudioPlayer is omitted to prevent duplicate sounddevice playback.
 
         # 1. Dispatch named agent to room
         try:
@@ -459,8 +457,7 @@ class NexaLiveKitClient(QObject):
                     self.playbackStopped.emit()
                     self.playbackActiveChanged.emit(False)
 
-                if self._player:
-                    self._player.play_chunk(frame_data)
+                # Audio frames are rendered natively by WebRTC ADM; stream is retained for VAD/UI state.
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -611,6 +608,12 @@ class NexaLiveKitClient(QObject):
             self._track_publication = await self._room.local_participant.publish_track(
                 self._audio_track, opts
             )
+            # Ensure the newly bound WebRTC transceiver applies the initial mute state
+            if self._is_muted:
+                self._audio_track.mute()
+            else:
+                self._audio_track.unmute()
+
             logger.info(
                 "Published microphone track (SID: %s, source: %s, muted: %s)",
                 self._track_publication.sid,

@@ -369,6 +369,21 @@ async def entrypoint(ctx: agents.JobContext):
         except asyncio.QueueFull:
             logging.warning("Transcription queue full; dropping audio chunk")
 
+    def _is_user_message_in_context(chat_ctx, text: str) -> bool:
+        """Inspects recent chat context items to avoid inserting duplicate user turns."""
+        if not chat_ctx or not hasattr(chat_ctx, "items"):
+            return False
+        clean_target = (text or "").strip().lower()
+        if not clean_target:
+            return False
+        for item in reversed(chat_ctx.items[-3:]):
+            if getattr(item, "role", None) == "user":
+                c = getattr(item, "content", "")
+                c_str = " ".join(str(p) for p in c) if isinstance(c, list) else str(c)
+                if c_str.strip().lower() == clean_target:
+                    return True
+        return False
+
     async def _transcription_worker_loop():
         while True:
             try:
@@ -430,14 +445,9 @@ async def entrypoint(ctx: agents.JobContext):
                                 except Exception:
                                     pass
 
-                        # 2. Update agent chat_ctx so session memory / Mem0 context contains user text
-                        if hasattr(agent, "chat_ctx") and agent.chat_ctx:
-                            try:
-                                new_ctx = agent.chat_ctx.copy()
-                                new_ctx.add_message(role="user", content=recognized_text)
-                                await agent.update_chat_ctx(new_ctx)
-                            except Exception as ctx_err:
-                                logging.warning("Failed to update agent chat context: %s", ctx_err)
+                        # 2. In Realtime mode, user turns are handled natively by LiveKit/Gemini audio ingestion.
+                        # Avoid calling update_chat_ctx here for unhandled turns, as sending turn_complete=False
+                        # causes Gemini Realtime cloud to wait ~60s for subsequent messages before responding.
 
                         # 2.5 Deterministic email approval/cancellation if an unexpired email draft is pending for this session
                         active_room_name = ctx.room.name if (ctx.room and getattr(ctx.room, "name", None)) else "default_session"
@@ -522,10 +532,12 @@ async def entrypoint(ctx: agents.JobContext):
                                             except Exception:
                                                 pass
 
-                                # 3. Update agent chat_ctx with verified assistant confirmation so model memory is current
+                                # 3. Update agent chat_ctx with recognized command and verified assistant confirmation
                                 if hasattr(agent, "chat_ctx") and agent.chat_ctx and spoken_msg:
                                     try:
                                         new_ctx_ea = agent.chat_ctx.copy()
+                                        if recognized_text and not _is_user_message_in_context(new_ctx_ea, recognized_text):
+                                            new_ctx_ea.add_message(role="user", content=recognized_text)
                                         new_ctx_ea.add_message(role="assistant", content=spoken_msg)
                                         await agent.update_chat_ctx(new_ctx_ea)
                                     except Exception as ctx_ea_err:
@@ -621,10 +633,12 @@ async def entrypoint(ctx: agents.JobContext):
                                                 except Exception:
                                                     pass
 
-                                    # 3. Update agent chat_ctx with assistant message so model memory is current
+                                    # 3. Update agent chat_ctx with recognized command and assistant message
                                     if hasattr(agent, "chat_ctx") and agent.chat_ctx and spoken_msg:
                                         try:
                                             new_ctx_rv = agent.chat_ctx.copy()
+                                            if recognized_text and not _is_user_message_in_context(new_ctx_rv, recognized_text):
+                                                new_ctx_rv.add_message(role="user", content=recognized_text)
                                             new_ctx_rv.add_message(role="assistant", content=spoken_msg)
                                             await agent.update_chat_ctx(new_ctx_rv)
                                         except Exception as ctx_rv_err:
@@ -671,7 +685,25 @@ async def entrypoint(ctx: agents.JobContext):
                                     res_msg,
                                 )
 
-                                # Stream assistant confirmation to LiveKit topic for ChatPanel rendering
+                                # 1. Stop Gemini from continuing or generating conflicting speech
+                                if session:
+                                    try:
+                                        if hasattr(session, "interrupt"):
+                                            int_fut = session.interrupt(force=True)
+                                            if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                                try:
+                                                    await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                                except Exception:
+                                                    pass
+                                    except Exception as int_err:
+                                        logging.debug("Could not interrupt session on local dispatch: %s", int_err)
+                                    try:
+                                        if hasattr(session, "clear_user_turn"):
+                                            session.clear_user_turn()
+                                    except Exception as cut_err:
+                                        logging.debug("Could not clear user turn on local dispatch: %s", cut_err)
+
+                                # 2. Stream assistant confirmation to LiveKit topic for ChatPanel rendering
                                 if res_msg and ctx.room and ctx.room.local_participant:
                                     a_writer = None
                                     try:
@@ -698,14 +730,35 @@ async def entrypoint(ctx: agents.JobContext):
                                             except Exception:
                                                 pass
 
-                                # Update agent chat_ctx with assistant confirmation
+                                # 3. Update agent chat_ctx with recognized user command and assistant confirmation
                                 if hasattr(agent, "chat_ctx") and agent.chat_ctx and res_msg:
                                     try:
                                         new_ctx = agent.chat_ctx.copy()
+                                        if recognized_text and not _is_user_message_in_context(new_ctx, recognized_text):
+                                            new_ctx.add_message(role="user", content=recognized_text)
                                         new_ctx.add_message(role="assistant", content=res_msg)
                                         await agent.update_chat_ctx(new_ctx)
                                     except Exception as a_ctx_err:
                                         logging.debug("Failed to append local assistant confirmation to chat_ctx: %s", a_ctx_err)
+
+                                # 4. Speak the verified confirmation using Gemini voice without calling tools
+                                if session and res_msg:
+                                    try:
+                                        clean_reply_text = re.sub(r"['\"\\]", "", res_msg).strip()
+                                        reply_instruction = (
+                                            f"Say to the user: '{clean_reply_text}'. "
+                                            "Do not invoke any tools."
+                                        )
+                                        if hasattr(session, "generate_reply"):
+                                            reply_res = session.generate_reply(
+                                                instructions=reply_instruction,
+                                                tool_choice="none",
+                                            )
+                                            if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
+                                                await reply_res
+                                        logging.info("LOCAL_DISPATCH_CONFIRMATION_SPOKEN: %s", res_msg)
+                                    except Exception as reply_err:
+                                        logging.warning("Failed to generate spoken reply for local dispatch: %s", reply_err)
                 except Exception as tr_err:
                     logging.warning("Failed to transcribe speech segment: %s", tr_err)
                 finally:

@@ -4691,6 +4691,30 @@ SUPPORTED_LOCAL_SPEECH_INTENTS = {
     "SHOW_REMINDERS",
     "CANCEL_REMINDER",
     "CANCEL_ALL_REMINDERS",
+    "OPEN_APPLICATION",
+    "OPEN_WEBSITE",
+    "OPEN_FOLDER",
+    "OPEN_FILE",
+    "FIND_FILE",
+    "OPEN_WINDOWS_SETTINGS",
+    "OPEN_WIFI_SETTINGS",
+    "OPEN_BLUETOOTH_SETTINGS",
+    "OPEN_SOUND_SETTINGS",
+    "OPEN_DISPLAY_SETTINGS",
+    "OPEN_NETWORK_SETTINGS",
+    "MUTE_VOLUME",
+    "UNMUTE_VOLUME",
+    "INCREASE_VOLUME",
+    "DECREASE_VOLUME",
+    "SET_BRIGHTNESS",
+    "INCREASE_BRIGHTNESS",
+    "DECREASE_BRIGHTNESS",
+    "GET_TIME",
+    "GET_DATE",
+    "GET_SYSTEM_INFO",
+    "SYSTEM_INFO",
+    "CLOSE_APPLICATION",
+    "INSPECT_APPLICATIONS",
 }
 
 
@@ -4746,6 +4770,10 @@ async def handle_local_speech_intent(text: str) -> Optional[Dict[str, Any]]:
 
     # 6. Reminder capability or incomplete command
     elif _is_reminder_capability_or_incomplete(clean_low)[0]:
+        is_supported = True
+
+    # 6.5 Direct alias match for known websites or common applications
+    elif _is_website_request(text) or (_extract_app_name(text) in COMMON_APPS):
         is_supported = True
 
     # 7. ML classifier check if not matched by explicit rules
