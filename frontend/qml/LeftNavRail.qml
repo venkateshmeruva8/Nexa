@@ -17,6 +17,16 @@ Item {
         color: "#0a192f"
     }
 
+    Connections {
+        target: controller
+        function onNavChanged() {
+            homeCanvas.requestPaint()
+            chatCanvas.requestPaint()
+            gridCanvas.requestPaint()
+            setCanvas.requestPaint()
+        }
+    }
+
     Column {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
@@ -32,7 +42,19 @@ Item {
             border.color: controller.activeNav === 0 ? "#0077ff" : "transparent"
             border.width: controller.activeNav === 0 ? 1.8 : 0
 
+            // Left neon indicator pill
+            Rectangle {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3.5
+                height: controller.activeNav === 0 ? 24 : 0
+                radius: 1.75
+                color: "#00b4ff"
+                Behavior on height { NumberAnimation { duration: 160 } }
+            }
+
             Canvas {
+                id: homeCanvas
                 width: 22
                 height: 22
                 anchors.centerIn: parent
@@ -70,7 +92,11 @@ Item {
                 id: homeMa
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: controller.selectNav(0)
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    controller.selectNav(0)
+                    homeCanvas.requestPaint()
+                }
             }
         }
 
@@ -83,7 +109,19 @@ Item {
             border.color: controller.activeNav === 1 ? "#0077ff" : "transparent"
             border.width: controller.activeNav === 1 ? 1.8 : 0
 
+            // Left neon indicator pill
+            Rectangle {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3.5
+                height: controller.activeNav === 1 ? 24 : 0
+                radius: 1.75
+                color: "#00b4ff"
+                Behavior on height { NumberAnimation { duration: 160 } }
+            }
+
             Canvas {
+                id: chatCanvas
                 width: 22
                 height: 22
                 anchors.centerIn: parent
@@ -119,7 +157,11 @@ Item {
                 id: chatMa
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: controller.selectNav(1)
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    controller.selectNav(1)
+                    chatCanvas.requestPaint()
+                }
             }
         }
 
@@ -132,7 +174,19 @@ Item {
             border.color: controller.activeNav === 2 ? "#0077ff" : "transparent"
             border.width: controller.activeNav === 2 ? 1.8 : 0
 
+            // Left neon indicator pill
+            Rectangle {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3.5
+                height: controller.activeNav === 2 ? 24 : 0
+                radius: 1.75
+                color: "#00b4ff"
+                Behavior on height { NumberAnimation { duration: 160 } }
+            }
+
             Canvas {
+                id: gridCanvas
                 width: 22
                 height: 22
                 anchors.centerIn: parent
@@ -160,7 +214,11 @@ Item {
                 id: gridMa
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: controller.selectNav(2)
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    controller.selectNav(2)
+                    gridCanvas.requestPaint()
+                }
             }
         }
 
@@ -173,7 +231,19 @@ Item {
             border.color: controller.activeNav === 3 ? "#0077ff" : "transparent"
             border.width: controller.activeNav === 3 ? 1.8 : 0
 
+            // Left neon indicator pill
+            Rectangle {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                width: 3.5
+                height: controller.activeNav === 3 ? 24 : 0
+                radius: 1.75
+                color: "#00b4ff"
+                Behavior on height { NumberAnimation { duration: 160 } }
+            }
+
             Canvas {
+                id: setCanvas
                 width: 22
                 height: 22
                 anchors.centerIn: parent
@@ -208,7 +278,11 @@ Item {
                 id: setMa
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: controller.selectNav(3)
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    controller.selectNav(3)
+                    setCanvas.requestPaint()
+                }
             }
         }
     }

@@ -9,7 +9,7 @@ Item {
         id: titleRow
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
-        anchors.topMargin: Math.min(575, Math.max(380, parent.height - 350))
+        anchors.topMargin: Math.round(parent.height * 0.565)
         spacing: 16
 
         Text {
@@ -124,7 +124,7 @@ Item {
         height: 114
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Math.min(68, Math.max(24, Math.round(parent.height * 0.05)))
+        anchors.bottomMargin: Math.min(48, Math.max(20, Math.round(parent.height * 0.04)))
 
         // Pill background
         Rectangle {
