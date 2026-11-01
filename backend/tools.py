@@ -57,7 +57,7 @@ if get_model_bundle is not None:
     except Exception:
         pass
 
-from livekit.agents import function_tool, RunContext
+from livekit.agents import function_tool, RunContext, StopResponse
 import aiohttp
 
 
@@ -998,10 +998,63 @@ async def execute_desktop_action(
         except ImportError:
             from backend.actions import route_intent  # type: ignore
 
+    try:
+        from backend.actions import get_turn_coordinator
+    except ImportError:
+        try:
+            from actions import get_turn_coordinator  # type: ignore
+        except ImportError:
+            get_turn_coordinator = None  # type: ignore
+
+    coord = get_turn_coordinator() if get_turn_coordinator is not None else None
+    matched_rec = None
+    if coord is not None:
+        status, matched_rec = coord.correlate_tool_call(command)
+        if status == "ALREADY_EXECUTED_BY_LOCAL" and matched_rec is not None:
+            # If another handler is actively executing, wait briefly for completion
+            if matched_rec.in_progress:
+                wait_start = time.monotonic()
+                while matched_rec.in_progress and (time.monotonic() - wait_start < 1.5):
+                    await asyncio.sleep(0.05)
+            logging.info(
+                "GEMINI_TOOL_SUPPRESSING_SPEECH_FOR_LOCAL_TURN: Tool command '%s' already executed by LOCAL_INTENT on turn %s. Raising StopResponse.",
+                command,
+                matched_rec.turn_id,
+            )
+            raise StopResponse()
+
+        if status == "UNMATCHED_STALE":
+            logging.warning(
+                "GEMINI_TOOL_REJECTED_STALE_OR_UNMATCHED: Tool command '%s' does not match active turn or any valid originating turn. Failing closed.",
+                command,
+            )
+            raise StopResponse()
+
+        if status == "ACTIVE_TURN_MATCH" and matched_rec is not None:
+            turn_id = matched_rec.turn_id
+            can_exec, is_done, cached_res = coord.claim_execution(turn_id, "GEMINI_TOOL")
+            if is_done and cached_res:
+                logging.info("GEMINI_TOOL_REUSING_AUTHORITATIVE_RESULT: %s", cached_res)
+                if matched_rec.spoken_delivered and matched_rec.owner == "LOCAL_INTENT":
+                    logging.info(
+                        "GEMINI_TOOL_SUPPRESSING_SPEECH_FOR_LOCAL_TURN: Turn %s already spoken by LOCAL_INTENT. Raising StopResponse.",
+                        turn_id,
+                    )
+                    raise StopResponse()
+                return cached_res
+            if not can_exec:
+                logging.info("GEMINI_TOOL_YIELDING: Execution not claimed for turn %s", turn_id)
+                raise StopResponse()
+
     logging.info("COMMAND SUBMITTED: %s", command)
     result = await route_intent(text=command, confirmed=confirmed, run_context=context, dry_run=dry_run)
     logging.info("RESPONSE GENERATED")
-    return result["result"]
+    res_str = result["result"]
+    if coord is not None and matched_rec is not None:
+        coord.record_action_result(matched_rec.turn_id, "GEMINI_TOOL", res_str, command=command)
+    elif coord is not None:
+        coord.record_action_result(None, "GEMINI_TOOL", res_str, command=command)
+    return res_str
 
 
 @function_tool()

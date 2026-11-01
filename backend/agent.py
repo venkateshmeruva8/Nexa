@@ -118,7 +118,9 @@ class Assistant(Agent):
             llm=google.beta.realtime.RealtimeModel(
                 voice="Aoede",
                 temperature=0.6,
+                language="en-US",
                 input_audio_transcription=None,
+                tool_behavior=types.Behavior.NON_BLOCKING,
             ),
             tools=tools,
             chat_ctx=chat_ctx,
@@ -335,6 +337,11 @@ async def entrypoint(ctx: agents.JobContext):
     speech_chunks: list[bytes] = []
     is_user_speaking: bool = False
     active_user_identity: str = "user"
+    try:
+        from backend.actions import get_turn_coordinator
+    except ImportError:
+        from actions import get_turn_coordinator  # type: ignore
+    get_turn_coordinator().set_session_language("English", active_room_name)
 
     def _resolve_user_identity(explicit_id: Optional[str] = None) -> str:
         nonlocal active_user_identity
@@ -358,14 +365,26 @@ async def entrypoint(ctx: agents.JobContext):
         if len(audio_payload) < 6400:
             return
         user_id = _resolve_user_identity()
+        turn_id = f"turn_{int(time.time()*1000)}_{uuid.uuid4().hex[:6]}"
+        try:
+            from backend.actions import get_turn_coordinator
+        except ImportError:
+            try:
+                from actions import get_turn_coordinator  # type: ignore
+            except ImportError:
+                get_turn_coordinator = None  # type: ignore
+        if get_turn_coordinator is not None:
+            get_turn_coordinator().start_turn(turn_id)
+
         logging.info(
-            "STT_SEGMENT_QUEUED: duration=%.2fs (%d bytes), user=%s",
+            "STT_SEGMENT_QUEUED: turn=%s, duration=%.2fs (%d bytes), user=%s",
+            turn_id,
             len(audio_payload) / 32000.0,
             len(audio_payload),
             user_id,
         )
         try:
-            transcription_queue.put_nowait((audio_payload, user_id))
+            transcription_queue.put_nowait((audio_payload, user_id, turn_id))
         except asyncio.QueueFull:
             logging.warning("Transcription queue full; dropping audio chunk")
 
@@ -390,7 +409,11 @@ async def entrypoint(ctx: agents.JobContext):
                 item = await transcription_queue.get()
                 if item is None:
                     break
-                audio_payload, user_id = item
+                if len(item) == 3:
+                    audio_payload, user_id, item_turn_id = item
+                else:
+                    audio_payload, user_id = item[:2]
+                    item_turn_id = f"turn_{int(time.time()*1000)}"
                 try:
                     audio_np = np.frombuffer(audio_payload, dtype=np.int16).astype(np.float32) / 32768.0
 
@@ -405,6 +428,16 @@ async def entrypoint(ctx: agents.JobContext):
                     recognized_text, detected_lang, lang_prob = await asyncio.to_thread(_sync_transcribe, whisper_model, audio_np)
                     latency = time.monotonic() - t0
                     if recognized_text:
+                        try:
+                            from backend.actions import get_turn_coordinator
+                        except ImportError:
+                            try:
+                                from actions import get_turn_coordinator  # type: ignore
+                            except ImportError:
+                                get_turn_coordinator = None  # type: ignore
+                        if get_turn_coordinator is not None:
+                            get_turn_coordinator().register_turn_transcript(item_turn_id, recognized_text)
+
                         logging.info(
                             "STT_WHISPER_DONE: lang=%s (prob=%.2f), latency=%.3fs, chars=%d, text=%r",
                             detected_lang,
@@ -449,6 +482,95 @@ async def entrypoint(ctx: agents.JobContext):
                         # Avoid calling update_chat_ctx here for unhandled turns, as sending turn_complete=False
                         # causes Gemini Realtime cloud to wait ~60s for subsequent messages before responding.
 
+                        # 2.4 Explicit language switch check (decoupled from input detection)
+                        try:
+                            from backend.actions import detect_explicit_language_switch
+                        except ImportError:
+                            from actions import detect_explicit_language_switch  # type: ignore
+
+                        language_switch_handled = False
+                        lang_switch = detect_explicit_language_switch(recognized_text)
+                        if lang_switch:
+                            target_lang_name, target_lang_code, localized_ack = lang_switch
+                            get_turn_coordinator().set_session_language(target_lang_name, active_room_name)
+                            language_switch_handled = True
+                            logging.info(
+                                "EXPLICIT_LANGUAGE_SWITCH: name=%s, code=%s, ack=%r",
+                                target_lang_name,
+                                target_lang_code,
+                                localized_ack,
+                            )
+                            # Stop Gemini speculative speech with safety boundary
+                            if session:
+                                try:
+                                    if hasattr(session, "interrupt"):
+                                        int_fut = session.interrupt(force=True)
+                                        if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                            try:
+                                                await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                            except Exception:
+                                                pass
+                                except Exception as int_err:
+                                    logging.debug("Could not interrupt session on language switch: %s", int_err)
+                                try:
+                                    if hasattr(session, "clear_user_turn"):
+                                        session.clear_user_turn()
+                                except Exception as cut_err:
+                                    logging.debug("Could not clear user turn on language switch: %s", cut_err)
+
+                            # Publish assistant update to LiveKit topic for ChatPanel rendering
+                            if localized_ack and ctx.room and ctx.room.local_participant:
+                                lsw_writer = None
+                                try:
+                                    lsw_writer = await ctx.room.local_participant.stream_text(
+                                        topic="lk.transcription",
+                                        sender_identity="assistant",
+                                        attributes={
+                                            "lk.transcription_final": "true",
+                                            "lk.segment_id": str(uuid.uuid4()),
+                                            "role": "assistant",
+                                        },
+                                    )
+                                    await lsw_writer.write(localized_ack)
+                                except Exception as stream_err:
+                                    logging.debug("Could not stream language switch confirmation: %s", stream_err)
+                                finally:
+                                    if lsw_writer is not None:
+                                        try:
+                                            await lsw_writer.aclose()
+                                        except Exception:
+                                            pass
+
+                            # Update agent chat_ctx with recognized command and assistant message
+                            if hasattr(agent, "chat_ctx") and agent.chat_ctx and localized_ack:
+                                try:
+                                    new_ctx_ls = agent.chat_ctx.copy()
+                                    if recognized_text and not _is_user_message_in_context(new_ctx_ls, recognized_text):
+                                        new_ctx_ls.add_message(role="user", content=recognized_text)
+                                    new_ctx_ls.add_message(role="assistant", content=localized_ack)
+                                    await agent.update_chat_ctx(new_ctx_ls)
+                                except Exception as ctx_ls_err:
+                                    logging.warning("Failed to update chat context on language switch: %s", ctx_ls_err)
+
+                            # Speak the localized acknowledgment without calling any tools
+                            if session and localized_ack:
+                                try:
+                                    clean_reply_text = re.sub(r"['\"\\]", "", localized_ack).strip()
+                                    reply_instruction = (
+                                        f"Say to the user in {target_lang_name}: '{clean_reply_text}'. "
+                                        "Do not invoke any tools."
+                                    )
+                                    if hasattr(session, "generate_reply"):
+                                        reply_res = session.generate_reply(
+                                            instructions=reply_instruction,
+                                            tool_choice="none",
+                                        )
+                                        if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
+                                            await reply_res
+                                    logging.info("EXPLICIT_LANGUAGE_SWITCH_SPOKEN: %s", localized_ack)
+                                except Exception as reply_err:
+                                    logging.warning("Failed to speak language switch confirmation: %s", reply_err)
+
                         # 2.5 Deterministic email approval/cancellation if an unexpired email draft is pending for this session
                         active_room_name = ctx.room.name if (ctx.room and getattr(ctx.room, "name", None)) else "default_session"
                         try:
@@ -459,7 +581,7 @@ async def entrypoint(ctx: agents.JobContext):
                             from actions import handle_local_email_approval  # type: ignore
 
                         email_approval_handled = False
-                        if has_pending_email_for_session(active_room_name):
+                        if not language_switch_handled and has_pending_email_for_session(active_room_name):
                             email_app_res = await handle_local_email_approval(
                                 recognized_text,
                                 session_id=active_room_name,
@@ -546,9 +668,10 @@ async def entrypoint(ctx: agents.JobContext):
                                 # 4. Speak the verified final confirmation to the user without calling any tools
                                 if session and spoken_msg:
                                     try:
+                                        active_resp_lang = get_turn_coordinator().get_session_language(active_room_name)
                                         clean_reply_text = re.sub(r"['\"\\]", "", spoken_msg).strip()
                                         reply_instruction = (
-                                            f"Say to the user: '{clean_reply_text}'. "
+                                            f"Say to the user in {active_resp_lang}: '{clean_reply_text}'. "
                                             "Never mention that the email is staged or awaiting approval. "
                                             "Do not invoke any tools."
                                         )
@@ -564,7 +687,7 @@ async def entrypoint(ctx: agents.JobContext):
                                         logging.warning("Failed to generate spoken reply for email confirmation: %s", reply_err)
 
                         # 2.6 Deterministic recipient verification if candidate recipient is pending for this session (Phase 1)
-                        if not email_approval_handled:
+                        if not email_approval_handled and not language_switch_handled:
                             try:
                                 from backend.tools import has_pending_recipient_verification_for_session
                                 from backend.actions import handle_local_recipient_verification
@@ -577,7 +700,7 @@ async def entrypoint(ctx: agents.JobContext):
                                     recognized_text,
                                     session_id=active_room_name,
                                     user_authorized=True,
-                                )
+                                    )
                                 if recip_ver_res and recip_ver_res.get("handled"):
                                     email_approval_handled = True
                                     intent_name = recip_ver_res.get("intent", "RECIPIENT_VERIFICATION")
@@ -647,9 +770,10 @@ async def entrypoint(ctx: agents.JobContext):
                                     # 4. Speak the verified message to the user without calling any tools
                                     if session and spoken_msg:
                                         try:
+                                            active_resp_lang = get_turn_coordinator().get_session_language(active_room_name)
                                             clean_reply_text = re.sub(r"['\"\\]", "", spoken_msg).strip()
                                             reply_instruction = (
-                                                f"Say to the user: '{clean_reply_text}'. "
+                                                f"Say to the user in {active_resp_lang}: '{clean_reply_text}'. "
                                                 "Do not invoke any tools."
                                             )
                                             if hasattr(session, "generate_reply"):
@@ -664,14 +788,38 @@ async def entrypoint(ctx: agents.JobContext):
                                             logging.warning("Failed to generate spoken reply for recipient verification: %s", reply_err)
 
                         # 3. Deterministic local execution for high-confidence supported intents (Priority 1)
-                        if not email_approval_handled:
+                        if not email_approval_handled and not language_switch_handled:
                             try:
-                                from backend.actions import handle_local_speech_intent
+                                from backend.actions import handle_local_speech_intent, get_turn_coordinator
                             except ImportError:
-                                from actions import handle_local_speech_intent  # type: ignore
+                                from actions import handle_local_speech_intent, get_turn_coordinator  # type: ignore
 
+                            coord = get_turn_coordinator() if get_turn_coordinator is not None else None
+                            local_res = None
                             try:
-                                local_res = await handle_local_speech_intent(recognized_text)
+                                candidate_res = await handle_local_speech_intent(recognized_text)
+                                if candidate_res and candidate_res.get("handled") and candidate_res.get("result"):
+                                    can_exec, is_already_done, cached = (
+                                        coord.claim_execution(item_turn_id, "LOCAL_INTENT")
+                                        if coord is not None
+                                        else (True, False, None)
+                                    )
+                                    if is_already_done and cached:
+                                        local_res = candidate_res
+                                        local_res["result"] = cached
+                                    elif can_exec:
+                                        local_res = candidate_res
+                                        if coord is not None:
+                                            coord.record_action_result(
+                                                item_turn_id,
+                                                "LOCAL_INTENT",
+                                                local_res["result"],
+                                                command=recognized_text,
+                                            )
+                                    else:
+                                        local_res = None
+                                else:
+                                    local_res = None
                             except Exception as local_err:
                                 logging.debug("Error in local speech intent handler: %s", local_err)
                                 local_res = None
@@ -685,80 +833,94 @@ async def entrypoint(ctx: agents.JobContext):
                                     res_msg,
                                 )
 
-                                # 1. Stop Gemini from continuing or generating conflicting speech
-                                if session:
-                                    try:
-                                        if hasattr(session, "interrupt"):
-                                            int_fut = session.interrupt(force=True)
-                                            if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                can_speak = (
+                                    coord.claim_spoken_response(item_turn_id, "LOCAL_INTENT")
+                                    if coord is not None
+                                    else True
+                                )
+                                if can_speak:
+                                    # 1. Stop Gemini from continuing or generating conflicting speech
+                                    if session:
+                                        try:
+                                            if hasattr(session, "interrupt"):
+                                                int_fut = session.interrupt(force=True)
+                                                if asyncio.isfuture(int_fut) or hasattr(int_fut, "__await__"):
+                                                    try:
+                                                        await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                                    except Exception:
+                                                        pass
+                                        except Exception as int_err:
+                                            logging.debug("Could not interrupt session on local dispatch: %s", int_err)
+                                        try:
+                                            if hasattr(session, "clear_user_turn"):
+                                                session.clear_user_turn()
+                                        except Exception as cut_err:
+                                            logging.debug("Could not clear user turn on local dispatch: %s", cut_err)
+
+                                    # 2. Stream assistant confirmation to LiveKit topic for ChatPanel rendering
+                                    if res_msg and ctx.room and ctx.room.local_participant:
+                                        a_writer = None
+                                        try:
+                                            a_writer = await ctx.room.local_participant.stream_text(
+                                                topic="lk.transcription",
+                                                sender_identity="assistant",
+                                                attributes={
+                                                    "lk.transcription_final": "true",
+                                                    "lk.segment_id": str(uuid.uuid4()),
+                                                    "role": "assistant",
+                                                },
+                                            )
+                                            await a_writer.write(res_msg)
+                                            logging.info(
+                                                "LOCAL_CONFIRMATION_STREAMED: topic=lk.transcription, role=assistant, chars=%d",
+                                                len(res_msg),
+                                            )
+                                        except Exception as stream_err:
+                                            logging.debug("Could not stream local confirmation to lk.transcription: %s", stream_err)
+                                        finally:
+                                            if a_writer is not None:
                                                 try:
-                                                    await asyncio.wait_for(asyncio.shield(int_fut), timeout=0.5)
+                                                    await a_writer.aclose()
                                                 except Exception:
                                                     pass
-                                    except Exception as int_err:
-                                        logging.debug("Could not interrupt session on local dispatch: %s", int_err)
-                                    try:
-                                        if hasattr(session, "clear_user_turn"):
-                                            session.clear_user_turn()
-                                    except Exception as cut_err:
-                                        logging.debug("Could not clear user turn on local dispatch: %s", cut_err)
 
-                                # 2. Stream assistant confirmation to LiveKit topic for ChatPanel rendering
-                                if res_msg and ctx.room and ctx.room.local_participant:
-                                    a_writer = None
-                                    try:
-                                        a_writer = await ctx.room.local_participant.stream_text(
-                                            topic="lk.transcription",
-                                            sender_identity="assistant",
-                                            attributes={
-                                                "lk.transcription_final": "true",
-                                                "lk.segment_id": str(uuid.uuid4()),
-                                                "role": "assistant",
-                                            },
-                                        )
-                                        await a_writer.write(res_msg)
-                                        logging.info(
-                                            "LOCAL_CONFIRMATION_STREAMED: topic=lk.transcription, role=assistant, chars=%d",
-                                            len(res_msg),
-                                        )
-                                    except Exception as stream_err:
-                                        logging.debug("Could not stream local confirmation to lk.transcription: %s", stream_err)
-                                    finally:
-                                        if a_writer is not None:
-                                            try:
-                                                await a_writer.aclose()
-                                            except Exception:
-                                                pass
+                                    # 3. Update agent chat_ctx with recognized user command and assistant confirmation
+                                    if hasattr(agent, "chat_ctx") and agent.chat_ctx and res_msg:
+                                        try:
+                                            new_ctx = agent.chat_ctx.copy()
+                                            if recognized_text and not _is_user_message_in_context(new_ctx, recognized_text):
+                                                new_ctx.add_message(role="user", content=recognized_text)
+                                            new_ctx.add_message(role="assistant", content=res_msg)
+                                            await agent.update_chat_ctx(new_ctx)
+                                        except Exception as a_ctx_err:
+                                            logging.debug("Failed to append local assistant confirmation to chat_ctx: %s", a_ctx_err)
 
-                                # 3. Update agent chat_ctx with recognized user command and assistant confirmation
-                                if hasattr(agent, "chat_ctx") and agent.chat_ctx and res_msg:
-                                    try:
-                                        new_ctx = agent.chat_ctx.copy()
-                                        if recognized_text and not _is_user_message_in_context(new_ctx, recognized_text):
-                                            new_ctx.add_message(role="user", content=recognized_text)
-                                        new_ctx.add_message(role="assistant", content=res_msg)
-                                        await agent.update_chat_ctx(new_ctx)
-                                    except Exception as a_ctx_err:
-                                        logging.debug("Failed to append local assistant confirmation to chat_ctx: %s", a_ctx_err)
-
-                                # 4. Speak the verified confirmation using Gemini voice without calling tools
-                                if session and res_msg:
-                                    try:
-                                        clean_reply_text = re.sub(r"['\"\\]", "", res_msg).strip()
-                                        reply_instruction = (
-                                            f"Say to the user: '{clean_reply_text}'. "
-                                            "Do not invoke any tools."
-                                        )
-                                        if hasattr(session, "generate_reply"):
-                                            reply_res = session.generate_reply(
-                                                instructions=reply_instruction,
-                                                tool_choice="none",
+                                    # 4. Speak the verified confirmation using Gemini voice without calling tools
+                                    if session and res_msg:
+                                        try:
+                                            active_resp_lang = get_turn_coordinator().get_session_language(active_room_name)
+                                            clean_reply_text = re.sub(r"['\"\\]", "", res_msg).strip()
+                                            reply_instruction = (
+                                                f"Say to the user in {active_resp_lang}: '{clean_reply_text}'. "
+                                                "Do not invoke any tools."
                                             )
-                                            if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
-                                                await reply_res
-                                        logging.info("LOCAL_DISPATCH_CONFIRMATION_SPOKEN: %s", res_msg)
-                                    except Exception as reply_err:
-                                        logging.warning("Failed to generate spoken reply for local dispatch: %s", reply_err)
+                                            t_reply_start = time.monotonic()
+                                            if hasattr(session, "generate_reply"):
+                                                reply_res = session.generate_reply(
+                                                    instructions=reply_instruction,
+                                                    tool_choice="none",
+                                                )
+                                                if asyncio.iscoroutine(reply_res) or hasattr(reply_res, "__await__"):
+                                                    await reply_res
+                                            logging.info(
+                                                "LOCAL_DISPATCH_CONFIRMATION_SPOKEN: %s, duration=%.3fs",
+                                                res_msg,
+                                                time.monotonic() - t_reply_start,
+                                            )
+                                        except Exception as reply_err:
+                                            logging.warning("Failed to generate spoken reply for local dispatch: %s", reply_err)
+                                else:
+                                    logging.info("LOCAL_INTENT_SPOKEN_RESPONSE_SKIPPED: Spoken response already claimed by another handler for turn %s", item_turn_id)
                 except Exception as tr_err:
                     logging.warning("Failed to transcribe speech segment: %s", tr_err)
                 finally:
@@ -859,6 +1021,53 @@ async def entrypoint(ctx: agents.JobContext):
         elif st == "thinking":
             logging.info("RESPONSE GENERATED")
 
+    @session.on("speech_created")
+    def _on_speech_created(ev):
+        # 1. Ignore user_initiated speech (e.g. session.generate_reply for verified local confirmations)
+        if getattr(ev, "user_initiated", False):
+            return
+
+        # 2. Never suppress if user is actively speaking a subsequent turn
+        if is_user_speaking:
+            logging.debug("SPEECH_CREATED_ALLOWED: User is actively speaking a new turn")
+            return
+
+        try:
+            from backend.actions import get_turn_coordinator
+        except ImportError:
+            try:
+                from actions import get_turn_coordinator  # type: ignore
+            except ImportError:
+                get_turn_coordinator = None  # type: ignore
+
+        if get_turn_coordinator is None:
+            return
+
+        coord = get_turn_coordinator()
+        should_suppress, turn_id, reason = coord.try_suppress_unsolicited_speech(max_age=5.0)
+        speech_handle = getattr(ev, "speech_handle", None)
+        speech_id = getattr(speech_handle, "id", "unknown") if speech_handle else "unknown"
+
+        if should_suppress and speech_handle is not None:
+            logging.info(
+                "PREMATURE_GEMINI_AUDIO_SUPPRESSED: Interrupted unsolicited Gemini speech %s for turn %s (reason: %s)",
+                speech_id,
+                turn_id,
+                reason,
+            )
+            try:
+                speech_handle.interrupt(force=True)
+            except Exception as int_err:
+                logging.warning("Failed to interrupt unsolicited speech handle %s: %s", speech_id, int_err)
+        else:
+            logging.debug(
+                "SPEECH_CREATED_ALLOWED: Speech %s allowed for turn %s (reason: %s)",
+                speech_id,
+                turn_id,
+                reason,
+            )
+
+
     @session.on("conversation_item_added")
     def _on_conv_item(ev):
         item = getattr(ev, "item", ev)
@@ -871,6 +1080,22 @@ async def entrypoint(ctx: agents.JobContext):
                 cleaned_assistant_text = re.sub(r"<ctrl\d+>", "", text).strip()
                 if cleaned_assistant_text:
                     logging.info("ASSISTANT_TRANSCRIPT: %s", cleaned_assistant_text)
+                    try:
+                        from backend.actions import get_turn_coordinator
+                    except ImportError:
+                        try:
+                            from actions import get_turn_coordinator  # type: ignore
+                        except ImportError:
+                            get_turn_coordinator = None  # type: ignore
+                    if get_turn_coordinator is not None:
+                        can_claim = get_turn_coordinator().claim_spoken_response(None, "GEMINI_SPEECH")
+                        if not can_claim:
+                            logging.info("GEMINI_ASSISTANT_TRANSCRIPT_SUPPRESSED: Spoken response already delivered by LOCAL_INTENT")
+                            try:
+                                if hasattr(session, "interrupt"):
+                                    session.interrupt(force=True)
+                            except Exception:
+                                pass
                 else:
                     logging.debug("Filtered raw control tokens from ASSISTANT_TRANSCRIPT: %s", text.strip())
             elif role == "user":

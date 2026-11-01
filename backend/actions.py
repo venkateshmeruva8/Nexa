@@ -50,8 +50,12 @@ VK_VOLUME_MUTE = 0xAD  # 173
 COMMON_APPS = {
     "chrome": "chrome",
     "google chrome": "chrome",
+    "chrome browser": "chrome",
+    "google chrome browser": "chrome",
     "edge": "msedge",
     "microsoft edge": "msedge",
+    "edge browser": "msedge",
+    "microsoft edge browser": "msedge",
     "notepad": "notepad",
     "calculator": "calc",
     "calc": "calc",
@@ -96,8 +100,12 @@ COMMON_APPS = {
 APP_PROCESS_MAP = {
     "chrome": ["chrome.exe"],
     "google chrome": ["chrome.exe"],
+    "chrome browser": ["chrome.exe"],
+    "google chrome browser": ["chrome.exe"],
     "edge": ["msedge.exe"],
     "microsoft edge": ["msedge.exe"],
+    "edge browser": ["msedge.exe"],
+    "microsoft edge browser": ["msedge.exe"],
     "msedge": ["msedge.exe"],
     "notepad": ["notepad.exe"],
     "calculator": ["calculatorapp.exe", "calc.exe", "calculator.exe"],
@@ -1714,13 +1722,15 @@ def _extract_app_name(text: str) -> str:
         text.strip(),
         flags=re.IGNORECASE
     )
-    cleaned = re.sub(r"\s+(?:app|application)$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
+    cleaned = re.sub(r"\s+(?:app|application|browser|web browser)$", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
     return cleaned.lower()
 
 
 def _launch_application_sync(app_name: str) -> bool:
     """Finds and launches an application executable or shortcut safely without shell interpretation."""
-    clean_name = app_name.strip()
+    clean_name = re.sub(r"[.?!,;:]+$", "", app_name.strip()).strip()
     if not clean_name:
         return False
 
@@ -1735,8 +1745,14 @@ def _launch_application_sync(app_name: str) -> bool:
         except Exception:
             pass
 
-        # If it's a known URI protocol that failed to open, do not search disk
+        # If it's a known URI protocol that failed to open, check fallback or do not search disk
         if target.endswith(":"):
+            if target == "whatsapp:":
+                try:
+                    os.startfile(r"shell:AppsFolder\5319275A.WhatsAppDesktop_cv1g1gvanyjgm!App")
+                    return True
+                except Exception:
+                    pass
             return False
 
     # 2. Check if clean_name is an explicit existing file path (e.g. 'C:\Program Files\App\app.exe')
@@ -1844,8 +1860,10 @@ def _extract_close_app_name(text: str) -> str:
         flags=re.IGNORECASE
     )
     cleaned = re.sub(r"^(?:all\s+instances\s+of|all\s+|every\s+instance\s+of)\s+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
     cleaned = re.sub(r"\s+(?:app|application|window|process|processes|instances|instance)$", "", cleaned, flags=re.IGNORECASE).strip()
     cleaned = re.sub(r"\ball\b\s*", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
     return cleaned.lower()
 
 
@@ -2136,8 +2154,10 @@ def _extract_folder_name(text: str) -> str:
         text.strip(),
         flags=re.IGNORECASE
     )
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
     cleaned = re.sub(r"\s+(?:folder|directory)$", "", cleaned, flags=re.IGNORECASE).strip()
     cleaned = re.sub(r"^(?:the|my)\s+", "", cleaned, flags=re.IGNORECASE).strip()
+    cleaned = re.sub(r"[.?!,;:]+$", "", cleaned).strip()
     return cleaned.lower()
 
 
@@ -5285,4 +5305,363 @@ async def handle_local_recipient_verification(
         "spoken_response": spoken_response,
         "result": f"Ambiguous response. Recipient '{candidate_to}' not verified. Answer YES to confirm, provide correct address, or say CANCEL.",
     }
+
+
+# ---------------------------------------------------------
+# Multilingual Support & Explicit Language Switch Detector
+# ---------------------------------------------------------
+
+SUPPORTED_EXPLICIT_LANGUAGES: Dict[str, Tuple[str, str]] = {
+    "english": ("English", "en-US"),
+    "telugu": ("Telugu", "te-IN"),
+    "kannada": ("Kannada", "kn-IN"),
+    "hindi": ("Hindi", "hi-IN"),
+    "tamil": ("Tamil", "ta-IN"),
+    "malayalam": ("Malayalam", "ml-IN"),
+}
+
+LANGUAGE_SWITCH_CONFIRMATIONS: Dict[str, str] = {
+    "English": "Understood, I will speak in English from now on.",
+    "Telugu": "ఖచ్చితంగా, ఇకపై మనం తెలుగులో మాట్లాడుకుందాం. నేను మీకు ఎలా సహాయపడగలను?",
+    "Kannada": "ಖಂಡಿತ, ಇನ್ನು ಮುಂದೆ ನಾವು ಕನ್ನಡದಲ್ಲಿ ಮಾತನಾಡೋಣ. ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?",
+    "Hindi": "ज़रूर, अब से हम हिंदी में बात करेंगे। मैं आपकी क्या मदद कर सकता हूँ?",
+    "Tamil": "நிச்சயமாக, இனி நாம் தமிழில் பேசுவோம். நான் உங்களுக்கு எப்படி உதவ முடியும்?",
+    "Malayalam": "തീർച്ചയായും, ഇനി മുതൽ നമുക്ക് മലയാളത്തിൽ സംസാരിക്കാം. ഞാൻ നിങ്ങളെ എങ്ങനെ സഹായിക്കണം?",
+}
+
+
+def detect_explicit_language_switch(text: str) -> Optional[Tuple[str, str, str]]:
+    """
+    Detects whether the user's input is an explicit command to change the assistant's response language.
+    
+    Returns (language_name, bcp47_code, localized_confirmation) if an explicit switch command is matched.
+    Returns None if the utterance is general speech, even if it contains Indic words or loanwords.
+    """
+    if not text or not text.strip():
+        return None
+
+    clean = text.strip().lower()
+
+    # 1. English command phrasing patterns
+    m_eng = re.search(
+        r"\b(?:please\s+)?(?:(?:can\s+(?:we|you)\s+)?(?:speak|talk|converse|switch|change)\s+(?:(?:the\s+)?language\s+)?(?:in|to|into)?\s*|"
+        r"switch\s+(?:the\s+language\s+)?(?:back\s+)?to\s+)(english|telugu|kannada|hindi|tamil|malayalam)\b",
+        clean,
+        flags=re.IGNORECASE,
+    )
+    if m_eng:
+        lang_key = m_eng.group(1).lower()
+        if lang_key in SUPPORTED_EXPLICIT_LANGUAGES:
+            name, code = SUPPORTED_EXPLICIT_LANGUAGES[lang_key]
+            return name, code, LANGUAGE_SWITCH_CONFIRMATIONS.get(name, f"Understood, switching to {name}.")
+
+    m_please = re.search(r"^(english|telugu|kannada|hindi|tamil|malayalam)\s+please[!\.]*$", clean, flags=re.IGNORECASE)
+    if m_please:
+        lang_key = m_please.group(1).lower()
+        if lang_key in SUPPORTED_EXPLICIT_LANGUAGES:
+            name, code = SUPPORTED_EXPLICIT_LANGUAGES[lang_key]
+            return name, code, LANGUAGE_SWITCH_CONFIRMATIONS.get(name, f"Understood, switching to {name}.")
+
+    # 2. Native script command phrasing patterns (strict explicit imperative requests only)
+    if re.search(r"తెలుగు(?:లో)?\s*(?:మాట్లాడు|మాట్లాడండి|చెప్పు)", text):
+        return "Telugu", "te-IN", LANGUAGE_SWITCH_CONFIRMATIONS["Telugu"]
+
+    if re.search(r"ಕನ್ನಡ(?:ದಲ್ಲಿ)?\s*(?:ಮಾತನಾಡಿ|ಮಾತನಾಡು|ಹೇಳಿ)", text):
+        return "Kannada", "kn-IN", LANGUAGE_SWITCH_CONFIRMATIONS["Kannada"]
+
+    if re.search(r"हिंदी\s*(?:में)?\s*(?:बात\s*करो|बोलो|बोलिए)", text):
+        return "Hindi", "hi-IN", LANGUAGE_SWITCH_CONFIRMATIONS["Hindi"]
+
+    if re.search(r"தமி(?:ழ்|ழில்)\s*(?:பேசுங்கள்|பேசு)", text):
+        return "Tamil", "ta-IN", LANGUAGE_SWITCH_CONFIRMATIONS["Tamil"]
+
+    if re.search(r"മലയാള(?:ം|ത്തിൽ)?\s*(?:സംസാരിക്കൂ|സംസാരിക്കുക|പറയൂ)", text):
+        return "Malayalam", "ml-IN", LANGUAGE_SWITCH_CONFIRMATIONS["Malayalam"]
+
+    return None
+
+
+# ---------------------------------------------------------
+# Turn-Bound Execution Ownership (TLEO)
+# ---------------------------------------------------------
+
+import threading
+
+class TurnExecutionRecord:
+    def __init__(self, turn_id: str):
+        self.turn_id = turn_id
+        self.created_at = time.monotonic()
+        self.owner: Optional[str] = None
+        self.in_progress: bool = False
+        self.action_executed: bool = False
+        self.action_result: Optional[str] = None
+        self.spoken_delivered: bool = False
+        self.unsolicited_speech_suppressed: bool = False
+        self.action_completed_at: Optional[float] = None
+        self.transcript: Optional[str] = None
+        self.command: Optional[str] = None
+        self.lock = threading.Lock()
+
+
+
+class TurnExecutionCoordinator:
+    """
+    Manages atomic turn-bound execution ownership.
+    Ensures that for a single user turn:
+    1. At most one execution of a state-changing desktop action occurs.
+    2. At most one authoritative assistant response is spoken.
+    3. Handles Gemini-first, local-first, and in-progress tool races.
+    4. Consecutive identical user requests receive distinct turn IDs and execute independently.
+    """
+    def __init__(self):
+        self._master_lock = threading.Lock()
+        self._active_record: Optional[TurnExecutionRecord] = None
+        self._recent_records: Dict[str, TurnExecutionRecord] = {}
+        self._session_languages: Dict[str, str] = {}
+
+    @staticmethod
+    def _normalize_cmd(text: Optional[str]) -> str:
+        if not text:
+            return ""
+        t = text.lower().strip()
+        t = re.sub(r"^(?:(?:can\s+you|could\s+you|would\s+you|please|kindly|nexa)\s+)+", "", t)
+        t = re.sub(r"[^\w\s]", " ", t)
+        return " ".join(t.split())
+
+    @classmethod
+    def _commands_match(cls, cmd1: Optional[str], cmd2: Optional[str]) -> bool:
+        if not cmd1 or not cmd2:
+            return False
+        n1 = cls._normalize_cmd(cmd1)
+        n2 = cls._normalize_cmd(cmd2)
+        if not n1 or not n2:
+            return False
+        if n1 == n2:
+            return True
+        try:
+            from backend.actions import _extract_app_name, COMMON_APPS
+        except ImportError:
+            try:
+                from actions import _extract_app_name, COMMON_APPS  # type: ignore
+            except ImportError:
+                return False
+        app1 = _extract_app_name(cmd1)
+        app2 = _extract_app_name(cmd2)
+        if app1 and app2 and (app1 in COMMON_APPS) and (app2 in COMMON_APPS):
+            return COMMON_APPS[app1] == COMMON_APPS[app2]
+        return False
+
+    def register_turn_transcript(self, turn_id: str, transcript: str) -> None:
+        rec = self.get_or_create_turn(turn_id)
+        with rec.lock:
+            rec.transcript = transcript
+            logging.info("TURN_COORDINATOR: Turn %s transcript registered: %r", rec.turn_id, transcript)
+
+    def correlate_tool_call(self, command: str) -> Tuple[str, Optional[TurnExecutionRecord]]:
+        """
+        Correlates a Gemini tool call command with originating turn records.
+        Returns:
+            (status, matched_record)
+            where status is one of:
+            - "ALREADY_EXECUTED_BY_LOCAL": The command matches a recently completed local intent turn.
+            - "ACTIVE_TURN_MATCH": The command matches the currently active user turn.
+            - "UNMATCHED_STALE": The command matches neither and is stale or orphaned.
+        """
+        now = time.monotonic()
+        if not command or not command.strip():
+            return "UNMATCHED_STALE", None
+
+        with self._master_lock:
+            # 1. Check retained completed/in-progress local records (within 30s)
+            for rec in reversed(list(self._recent_records.values())):
+                if now - rec.created_at > 30.0:
+                    continue
+                with rec.lock:
+                    if rec.owner == "LOCAL_INTENT" and (rec.action_executed or rec.in_progress):
+                        if self._commands_match(command, rec.command) or self._commands_match(command, rec.transcript):
+                            logging.info(
+                                "TURN_COORDINATOR: Correlated tool command '%s' to local turn %s (action_executed=%s)",
+                                command,
+                                rec.turn_id,
+                                rec.action_executed,
+                            )
+                            return "ALREADY_EXECUTED_BY_LOCAL", rec
+
+            # 2. Check active turn record
+            if self._active_record and (now - self._active_record.created_at < 30.0):
+                rec = self._active_record
+                with rec.lock:
+                    if rec.transcript:
+                        if self._commands_match(command, rec.transcript) or self._commands_match(command, rec.command):
+                            logging.info(
+                                "TURN_COORDINATOR: Correlated tool command '%s' to active turn %s",
+                                command,
+                                rec.turn_id,
+                            )
+                            return "ACTIVE_TURN_MATCH", rec
+                    elif rec.owner is None and not rec.action_executed:
+                        logging.info(
+                            "TURN_COORDINATOR: Correlated tool command '%s' to active turn %s (pending transcript)",
+                            command,
+                            rec.turn_id,
+                        )
+                        return "ACTIVE_TURN_MATCH", rec
+
+            logging.warning(
+                "TURN_COORDINATOR: Tool command '%s' could not be correlated to active or completed turns",
+                command,
+            )
+            return "UNMATCHED_STALE", None
+
+    def start_turn(self, turn_id: str) -> TurnExecutionRecord:
+        if not turn_id:
+            turn_id = f"turn_{int(time.time()*1000)}"
+        now = time.monotonic()
+        with self._master_lock:
+            # Purge records older than 60s
+            expired = [tid for tid, rec in self._recent_records.items() if now - rec.created_at > 60.0]
+            for tid in expired:
+                self._recent_records.pop(tid, None)
+
+            record = TurnExecutionRecord(turn_id)
+            self._active_record = record
+            self._recent_records[turn_id] = record
+            return record
+
+    def get_or_create_turn(self, turn_id: Optional[str] = None) -> TurnExecutionRecord:
+        now = time.monotonic()
+        with self._master_lock:
+            if turn_id and turn_id in self._recent_records:
+                return self._recent_records[turn_id]
+            if self._active_record and (now - self._active_record.created_at < 30.0):
+                return self._active_record
+            new_id = turn_id or f"turn_{int(time.time()*1000)}"
+            record = TurnExecutionRecord(new_id)
+            self._active_record = record
+            self._recent_records[new_id] = record
+            return record
+
+    def claim_execution(self, turn_id: Optional[str], caller: str) -> Tuple[bool, bool, Optional[str]]:
+        """
+        Attempts to claim execution authority for a turn.
+        Returns:
+            (can_execute, is_already_executed, cached_result)
+        """
+        rec = self.get_or_create_turn(turn_id)
+        with rec.lock:
+            if rec.action_executed:
+                logging.info(
+                    "TURN_COORDINATOR: Duplicate action execution suppressed for %s (already executed by %s)",
+                    rec.turn_id,
+                    rec.owner,
+                )
+                return False, True, rec.action_result
+
+            if rec.in_progress and rec.owner != caller:
+                logging.info(
+                    "TURN_COORDINATOR: Action in-progress for %s by %s; %s yielding",
+                    rec.turn_id,
+                    rec.owner,
+                    caller,
+                )
+                return False, False, None
+
+            rec.owner = caller
+            rec.in_progress = True
+            logging.info("TURN_COORDINATOR: Turn %s execution claimed by %s", rec.turn_id, caller)
+            return True, False, None
+
+    def record_action_result(self, turn_id: Optional[str], caller: str, result: str, command: Optional[str] = None) -> None:
+        rec = self.get_or_create_turn(turn_id)
+        with rec.lock:
+            rec.in_progress = False
+            rec.action_executed = True
+            rec.action_result = result
+            if command:
+                rec.command = command
+            rec.action_completed_at = time.monotonic()
+            logging.info(
+                "TURN_COORDINATOR: Turn %s action result recorded by %s (length=%d)",
+                rec.turn_id,
+                caller,
+                len(result) if result else 0,
+            )
+
+    def get_active_record(self) -> Optional[TurnExecutionRecord]:
+        """Returns the currently active turn record if created within 30 seconds."""
+        now = time.monotonic()
+        with self._master_lock:
+            if self._active_record and (now - self._active_record.created_at < 30.0):
+                return self._active_record
+            return None
+
+    def try_suppress_unsolicited_speech(self, turn_id: Optional[str] = None, max_age: float = 5.0) -> Tuple[bool, Optional[str], str]:
+        """
+        Attempts to claim suppression of an unsolicited Gemini speech event for an active turn.
+        Returns:
+            (should_suppress, turn_id, reason)
+        Requirements for suppression:
+        1. Turn must be currently active and match turn_id (if provided).
+        2. Turn owner must be 'LOCAL_INTENT'.
+        3. Local action must be executed.
+        4. Age since action completion must be <= max_age (default 5.0s).
+        """
+        now = time.monotonic()
+        with self._master_lock:
+            rec = self._active_record
+            if not rec:
+                return False, None, "no_active_turn"
+            with rec.lock:
+                if turn_id and rec.turn_id != turn_id:
+                    return False, rec.turn_id, "turn_id_mismatch"
+                if rec.owner != "LOCAL_INTENT":
+                    return False, rec.turn_id, f"owner_is_{rec.owner}"
+                if not rec.action_executed:
+                    return False, rec.turn_id, "action_not_executed"
+                age = (now - rec.action_completed_at) if rec.action_completed_at else (now - rec.created_at)
+                if age > max_age:
+                    return False, rec.turn_id, f"turn_expired_age_{age:.2f}s"
+                rec.unsolicited_speech_suppressed = True
+                return True, rec.turn_id, f"suppressed_local_turn_age_{age:.2f}s"
+
+
+    def claim_spoken_response(self, turn_id: Optional[str], caller: str) -> bool:
+        """
+        Claims authority to speak the response for this turn.
+        Returns True if authorized (first speech), False if already delivered.
+        """
+        rec = self.get_or_create_turn(turn_id)
+        with rec.lock:
+            if rec.spoken_delivered:
+                logging.info("TURN_COORDINATOR: Duplicate speech delivery suppressed for %s (already spoken)", rec.turn_id)
+                return False
+            rec.spoken_delivered = True
+            logging.info("TURN_COORDINATOR: Turn %s speech claimed by %s", rec.turn_id, caller)
+            return True
+
+    def get_session_language(self, session_id: Optional[str] = None) -> str:
+        """Returns the active response language for the given session (defaults to English)."""
+        with self._master_lock:
+            sid = str(session_id).strip() if session_id else "default_session"
+            return self._session_languages.get(sid, "English")
+
+    def set_session_language(self, language: str, session_id: Optional[str] = None) -> None:
+        """Sets the active response language for the given session."""
+        with self._master_lock:
+            sid = str(session_id).strip() if session_id else "default_session"
+            self._session_languages[sid] = language or "English"
+
+    def clear(self) -> None:
+        with self._master_lock:
+            self._active_record = None
+            self._recent_records.clear()
+            self._session_languages.clear()
+
+
+_TURN_COORDINATOR = TurnExecutionCoordinator()
+
+
+def get_turn_coordinator() -> TurnExecutionCoordinator:
+    return _TURN_COORDINATOR
+
 

@@ -15,16 +15,19 @@ os.environ.setdefault("MEM0_TELEMETRY", "false")
 # Singleton client reference
 _ASYNC_CLIENT: Optional[Any] = None
 _CLIENT_INITIALIZED: bool = False
-_CLIENT_LOCK: Optional[asyncio.Lock] = None
-
 logger = logging.getLogger("nexa.memory")
+_CLIENT_LOCKS: dict[asyncio.AbstractEventLoop, asyncio.Lock] = {}
 
 
 def _get_client_lock() -> asyncio.Lock:
-    global _CLIENT_LOCK
-    if _CLIENT_LOCK is None:
-        _CLIENT_LOCK = asyncio.Lock()
-    return _CLIENT_LOCK
+    try:
+        current_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.Lock()
+
+    if current_loop not in _CLIENT_LOCKS:
+        _CLIENT_LOCKS[current_loop] = asyncio.Lock()
+    return _CLIENT_LOCKS[current_loop]
 
 
 def get_user_name() -> str:
